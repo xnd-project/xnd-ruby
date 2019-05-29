@@ -82,11 +82,11 @@ debugflags = -ggdb3
 warnflags = -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wno-tautological-compare -Wno-parentheses-equality -Wno-constant-logical-operand -Wno-self-assign -Wunused-variable -Wimplicit-int -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wimplicit-function-declaration -Wdeprecated-declarations -Wno-packed-bitfield-compat -Wsuggest-attribute=noreturn -Wsuggest-attribute=format -Wno-maybe-uninitialized
 CCDLFLAGS = -fPIC
 CFLAGS   = $(CCDLFLAGS) $(cflags)  -fPIC -O0 -g  $(ARCH_FLAG)
-INCFLAGS = -I. -I$(arch_hdrdir) -I$(hdrdir)/ruby/backward -I$(hdrdir) -I$(srcdir) -I/home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/include
+INCFLAGS = -I. -I$(arch_hdrdir) -I$(hdrdir)/ruby/backward -I$(hdrdir) -I$(srcdir) -I/home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/include
 DEFS     = 
-CPPFLAGS = -DHAVE_NDTYPES_H -I/home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/include  $(DEFS) $(cppflags)
+CPPFLAGS = -DHAVE_NDTYPES_H -I/home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/include  $(DEFS) $(cppflags)
 CXXFLAGS = $(CCDLFLAGS) $(cxxflags) $(ARCH_FLAG)
-ldflags  = -L. -fstack-protector -rdynamic -Wl,-export-dynamic -Wl,-rpath /home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/lib
+ldflags  = -L. -fstack-protector -rdynamic -Wl,-export-dynamic -Wl,-rpath /home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/lib
 dldflags = -Wl,--compress-debug-sections=zlib 
 ARCH_FLAG = 
 DLDFLAGS = $(ldflags) $(dldflags) $(ARCH_FLAG)
@@ -122,8 +122,8 @@ TOUCH = exit >
 #### End of system configuration section. ####
 
 preload = 
-libpath = . $(libdir) /home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/lib
-LIBPATH =  -L. -L$(libdir) -Wl,-R$(libdir) -L/home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/lib -Wl,-R/home/sameer/gitrepos/ndtypes/ruby/ext/ruby_ndtypes/lib
+libpath = . $(libdir) /home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/lib
+LIBPATH =  -L. -L$(libdir) -Wl,-R$(libdir) -L/home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/lib -Wl,-R/home/sameer/gitrepos/xnd-ruby/ndtypes/ext/ruby_ndtypes/lib
 DEFFILE = 
 
 CLEANFILES = mkmf.log
