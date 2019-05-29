@@ -59,3 +59,5 @@ ndtypes/GRTAGS
 gumath/tmp/
 gumath/GTAGS
 gumath/GRTAGS
+ndtypes/ext/ruby_ndtypes/GPATH
+ndtypes/ext/ruby_ndtypes/ndtypes

@@ -83,136 +83,7 @@ seterr(ndt_context_t *ctx)
 }
 
 /******************************************************************************/
-/************************* Resource Buffer Object *****************************/
 
-/* A ResourceBufferObject is passed around various NDT objects for storing 
- * internal state. It might or might not be duplicated across other NDT
- * objects.
- */
-typedef struct ResourceBufferObject {
-  ndt_meta_t *m;
-} ResourceBufferObject;
-
-#define GET_RBUF(obj, rbuf_p) do {                              \
-    TypedData_Get_Struct((obj), ResourceBufferObject,           \
-                         &ResourceBufferObject_type, (rbuf_p)); \
-} while (0)
-#define RBUF_NDT_M(rbuf_p) ((ndt_meta_t*)(rbuf_p->m))
-#define MAKE_RBUF(self, rbuf_p) TypedData_Make_Struct(self, ResourceBufferObject, \
-                                                      &ResourceBufferObject_type, rbuf_p)
-#define WRAP_RBUF(self, rbuf_p) TypedData_Wrap_Struct(self,             \
-                                                      &ResourceBufferObject_type, rbuf_p)
-
-/* GC free the ResourceBufferObject struct. */
-static void
-ResourceBufferObject_dfree(void * self)
-{
-  ResourceBufferObject * rbf = (ResourceBufferObject*)self;
-
-  ndt_meta_del(rbf->m);
-  rbf->m = NULL;
-  xfree(rbf);
-}
-
-/* Calculate the size of the object. */
-static size_t
-ResourceBufferObject_dsize(const void *self)
-{
-  return sizeof(ResourceBufferObject);           
-}
-
-static const rb_data_type_t ResourceBufferObject_type = {
-  .wrap_struct_name = "ResourceBufferObject",
-  .function = {
-    .dmark = 0,
-    .dfree = ResourceBufferObject_dfree,
-    .dsize = ResourceBufferObject_dsize,
-    .reserved = {0,0},
-  },
-  .parent = 0,
-  .flags = RUBY_TYPED_FREE_IMMEDIATELY,
-};
-
-/* FIXME: change this to rbuf_alloc to reflect that its not called by Ruby alloc. */
-static VALUE
-rbuf_allocate(void)
-{
-  NDT_STATIC_CONTEXT(ctx);
-  ResourceBufferObject *self;
-
-  self = ALLOC(ResourceBufferObject);
-
-  self->m = ndt_meta_new(&ctx);
-  if (self->m == NULL) {
-    rb_raise(rb_eNoMemError, "cannot allocate rbuf object.");
-  }
-  
-  return WRAP_RBUF(cNDTypes_RBuf, self);
-}
-
-static int
-rbuf_init_from_offset_list(ResourceBufferObject *rbuf, VALUE list)
-{
-  ndt_meta_t * const m = rbuf->m;
-  VALUE lst;
-
-  Check_Type(list, T_ARRAY);
-
-  const int64_t n = RARRAY_LEN(list);
-  if (n < 1 || n > NDT_MAX_DIM) {
-    rb_raise(rb_eValueError, "number of offset lists must be in [1, %d].",
-             NDT_MAX_DIM);
-  }
-
-  m->ndims = 0;
-  for (int64_t i = n-1; i >= 0; i--) {
-    lst = rb_ary_entry(list, i);
-    if (!RB_TYPE_P(lst, T_ARRAY)) {
-      rb_raise(rb_eTypeError, "expected a list of offset lists.");
-    }
-
-    const int64_t noffsets = RARRAY_LEN(lst);
-    if (noffsets < 2 || noffsets > INT32_MAX) {
-      rb_raise(rb_eValueError, "length of a single offset must be in [2, INT32_MAX].");
-    }
-
-    int32_t * const offsets = ndt_alloc(noffsets, sizeof(int32_t));
-    if (offsets == NULL) {
-      rb_raise(rb_eNoMemError, "could not allocate offsets.");
-    }
-
-    for (int32_t k = 0; k < noffsets; k++) {
-      long long x = NUM2LL(rb_ary_entry(lst, k));
-      if (x == -1 || x < 0 || x > INT32_MAX) {
-        ndt_free(offsets);
-        rb_raise(rb_eValueError, "offset must be in [0, INT32_MAX].");
-      }
-
-      offsets[k] = (int32_t)x;
-    }
-
-    m->noffsets[m->ndims] = (int32_t)noffsets;
-    m->offsets[m->ndims] = offsets;
-    m->ndims++;
-  }
-
-  return 0;
-}
-
-static VALUE
-rbuf_from_offset_lists(VALUE list)
-{
-  VALUE rbuf;
-  ResourceBufferObject * rbuf_p;
-
-  rbuf = rbuf_allocate();
-  GET_RBUF(rbuf, rbuf_p);
-  rbuf_init_from_offset_list(rbuf_p, list);
-
-  return rbuf;
-}
-
-/******************************************************************************/
 
 /******************************************************************************/
 /************************* NDT struct object **********************************/
@@ -223,7 +94,6 @@ typedef struct NdtObject {
 } NdtObject;
 
 #define NDT(v) (((NdtObject *)v)->ndt)
-#define RBUF(v) (((NdtObject *)v)->rbuf)
 #define GET_NDT(obj, ndt_p) do {                        \
     TypedData_Get_Struct((obj), NdtObject,              \
                          &NdtObject_type, (ndt_p));     \
@@ -232,19 +102,6 @@ typedef struct NdtObject {
                                                     &NdtObject_type, ndt_p)
 #define WRAP_NDT(self, ndt_p) TypedData_Wrap_Struct(self, &NdtObject_type, ndt_p)
 #define NDT_CHECK_TYPE(obj) (CLASS_OF(obj) == cNDTypes)
-
-/* Get the metatdata of the ResourceBufferObject within this NDT Ruby object. */
-static ndt_meta_t *
-rbuf_ndt_meta(VALUE ndt)
-{
-  NdtObject *ndt_p;
-  ResourceBufferObject *rbuf_p;
-  
-  GET_NDT(ndt, ndt_p);
-  GET_RBUF(ndt_p->rbuf, rbuf_p);
-
-  return rbuf_p->m;
-}
 
 /* Allocate an NdtObject, initialize members and return wrapped as a Ruby object. */
 static VALUE
@@ -1006,38 +863,6 @@ rb_ndtypes_const_ndt(VALUE ndt)
   return ndt_p->ndt;
 }
 
-/* Function for taking a source type and moving it accross the subtree.
-
-   @param src NDTypes Ruby object of the source XND object.
-   @param t Pointer to type of the view of XND object.
-*/
-VALUE
-rb_ndtypes_move_subtree(VALUE src, ndt_t *t)
-{
-  NDT_STATIC_CONTEXT(ctx);
-  VALUE dest;
-  NdtObject *dest_p, *src_p;
-
-  if (!NDT_CHECK_TYPE(src)) {
-    rb_raise(rb_eArgError, "expected NDT object from view src.");
-  }
-
-  dest = NdtObject_alloc();
-  
-  GET_NDT(dest, dest_p);
-  NDT(dest_p) = ndt_copy(t, &ctx);
-  if (NDT(dest_p) == NULL) {
-    rb_raise(rb_eNoMemError, "could not allocate memory for ndt_copy().");
-  }
-
-  GET_NDT(src, src_p);
-  RBUF(dest_p) = RBUF(src_p);
-
-  rb_ndtypes_gc_guard_register(dest_p, RBUF(dest_p));
-
-  return dest;
-}
-
 /* Create NDT object from String. Returns the same object if type is NDT. 
    
    @param type String object containing description of type.
@@ -1066,15 +891,12 @@ rb_ndtypes_from_object(VALUE type)
   copy = NdtObject_alloc();
   GET_NDT(copy, copy_p);
 
-  RBUF(copy_p) = rbuf_allocate();
-  NDT(copy_p) = ndt_from_string_fill_meta(
-                                          rbuf_ndt_meta(copy),
-                                          cp, &ctx);
+  NDT(copy_p) = ndt_from_string(cp, &ctx);
+  
   if (NDT(copy_p) == NULL) {
     seterr(&ctx);
     raise_error();
   }
-  rb_ndtypes_gc_guard_register(copy_p, RBUF(copy_p));
 
   return copy;
 }
