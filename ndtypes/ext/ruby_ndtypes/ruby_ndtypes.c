@@ -364,14 +364,14 @@ NDTypes_from_object(VALUE self, VALUE type)
   cp = StringValuePtr(type);
 
   GET_NDT(self, ndt_p);
-  RBUF(ndt_p) = rbuf_allocate();
-  if (RBUF(ndt_p) == NULL) {
-    rb_raise(rb_eNoMemError, "problem in allocating RBUF object.");
-  }
+  //  RBUF(ndt_p) = rbuf_allocate();
+  /*   if (RBUF(ndt_p) == NULL) { */
+  /*   rb_raise(rb_eNoMemError, "problem in allocating RBUF object."); */
+  /* } */
   
-  rb_ndtypes_gc_guard_register(ndt_p, RBUF(ndt_p));
+  //  rb_ndtypes_gc_guard_register(ndt_p, RBUF(ndt_p));
 
-  NDT(ndt_p) = ndt_from_string_fill_meta(rbuf_ndt_meta(self), cp, &ctx);
+  NDT(ndt_p) = ndt_from_string(cp, &ctx);
   if (NDT(ndt_p) == NULL) {
     seterr(&ctx);
     raise_error();

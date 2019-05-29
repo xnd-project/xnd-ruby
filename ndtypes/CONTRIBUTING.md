@@ -10,7 +10,7 @@ steps for getting started:
 * Run `bundle install`.
 * Run `rake develop`. This will build ndtypes with the latest working master branch
 of libndtypes.
-* Run `rspec` for running the tests.
+* Run `rake test` for running the tests.
 
 ## Interfacing with Ruby's GC
 
@@ -28,7 +28,8 @@ clean up the internal object that is shared between multiple user-facing objects
 (some of which might still be in use) and that will lead to segfaults.
 
 To avoid such a situation, in ndtypes we use a 'global GC guard' (inspired by @mrkn's
-[pycall.rb](https://github.com/mrkn/pycall.rb) gem) that stores the reference to the internal objects in a global Hash
+[pycall.rb](https://github.com/mrkn/pycall.rb) gem) that stores the reference to the 
+internal objects in a global Hash
 so that they don't go out of scope. When a user-facing object needs to be freed, we remove
 the reference to the user-facing object and its corresponding internal object from the
 global Hash.
