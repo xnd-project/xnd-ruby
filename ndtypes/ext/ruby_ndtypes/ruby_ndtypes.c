@@ -218,7 +218,7 @@ rbuf_from_offset_lists(VALUE list)
 /************************* NDT struct object **********************************/
 
 typedef struct NdtObject {
-  VALUE rbuf;                  /* resource buffer */
+  long hash;                    /* hash value of this object. */
   ndt_t *ndt;                   /* type */
 } NdtObject;
 
@@ -334,6 +334,14 @@ NDTYPES_BOOL_FUNC(ndt_is_complex)
 NDTYPES_BOOL_FUNC(ndt_is_c_contiguous)
 NDTYPES_BOOL_FUNC(ndt_is_f_contiguous)
 
+static int
+offsets_from_array(ndt_meta_t *m, VALUE array)
+{
+  NDT_STATIC_CONTEXT(ctx);
+
+  return 1;
+}
+
 static VALUE
 array_from_int64(int64_t x[NDT_MAX_DIM], int ndim)
 {
@@ -364,12 +372,6 @@ NDTypes_from_object(VALUE self, VALUE type)
   cp = StringValuePtr(type);
 
   GET_NDT(self, ndt_p);
-  //  RBUF(ndt_p) = rbuf_allocate();
-  /*   if (RBUF(ndt_p) == NULL) { */
-  /*   rb_raise(rb_eNoMemError, "problem in allocating RBUF object."); */
-  /* } */
-  
-  //  rb_ndtypes_gc_guard_register(ndt_p, RBUF(ndt_p));
 
   NDT(ndt_p) = ndt_from_string(cp, &ctx);
   if (NDT(ndt_p) == NULL) {
@@ -384,8 +386,8 @@ static VALUE
 NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
 {
   NDT_STATIC_CONTEXT(ctx);
+  ndt_meta_t m = {.ndims = 0, .offsets = {NULL}}
   NdtObject *self_p;
-  ResourceBufferObject *rbuf_p;
   const char *cp;
 
   Check_Type(type, T_STRING);
@@ -394,16 +396,17 @@ NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
   cp = StringValuePtr(type);
 
   GET_NDT(self, self_p);
-  RBUF(self_p) = rbuf_from_offset_lists(offsets);
-  GET_RBUF(RBUF(self_p), rbuf_p);
+
+  if (offsets_from_array(&m, offsets) < 0) {
+    ndt_meta_clear(&m);
+  }
   
-  NDT(self_p) = ndt_from_metadata_and_dtype(rbuf_p->m, cp, &ctx);
+  NDT(self_p) = ndt_from_metadata_and_dtype(&m, cp, &ctx);
+  ndt_meta_clear(&m);
   if(NDT(self_p) == NULL) {
     seterr(&ctx);
     raise_error();
   }
-
-  rb_ndtypes_gc_guard_register(self_p, RBUF(self_p));
 
   return self;
 }
