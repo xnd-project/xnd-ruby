@@ -19,7 +19,7 @@ end
 files = get_files
 
 NDTypes::DESCRIPTION = <<MSG
-NDtypes is library for defining memory shapes using a easy and friendly interface.
+NDTypes is library for defining memory shapes using a easy and friendly interface.
  
 It is a wrapper over the libndtypes C library.
 MSG
