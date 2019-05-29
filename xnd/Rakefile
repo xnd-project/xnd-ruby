@@ -94,7 +94,7 @@ task :develop do
   Dir.mkdir(ext_xnd)
 
   puts "cloning xnd repo into ext/ folder..."
-  system("git clone https://github.com/plures/xnd #{ext_xnd}")
+  system("git clone https://github.com/xnd-project/xnd #{ext_xnd}")
 
   Dir.chdir(ext_xnd) do
     system("git checkout #{RubyXND::COMMIT}")
