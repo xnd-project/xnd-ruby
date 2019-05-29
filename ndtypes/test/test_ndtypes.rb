@@ -1345,8 +1345,7 @@ class LongFixedDimTests < Minitest::Test
           step = rand(-100...100)
           s = "fixed(shape=#{shape}, step=#{step}) * #{s}"
         end
-
-        puts "s :: #{s}."
+        
         t = NDT.new s
 
         assert_true verify_datasize(t)
