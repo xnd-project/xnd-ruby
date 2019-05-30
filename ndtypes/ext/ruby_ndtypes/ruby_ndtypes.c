@@ -8,12 +8,10 @@
 /* ---------- Interal declarations ---------- */
 /* data_type_t variables. */
 static const rb_data_type_t NdtObject_type;
-static const rb_data_type_t ResourceBufferObject_type;
 
 /* Class declarations. */
 VALUE cNDTypes;
 VALUE mNDTypes_GCGuard;
-static VALUE cNDTypes_RBuf;
 
 static VALUE rb_eValueError;
 
@@ -195,8 +193,51 @@ static int
 offsets_from_array(ndt_meta_t *m, VALUE array)
 {
   NDT_STATIC_CONTEXT(ctx);
+  VALUE temp;
 
-  return 1;
+  Check_Type(array, T_ARRAY);
+
+  const int n = RARRAY_LEN(array);
+  if (n < 1 || n > NDT_MAX_DIM) {
+    rb_raise(rb_eValueError, "number of offsets arrays must be in [1, %d].", NDT_MAX_DIM);
+  }
+
+  m->ndims = 0;
+  for (int i = n-1; i >= 0; i--) {
+    temp = rb_ary_entry(array, i);
+    if (!RB_TYPE_P(temp, T_ARRAY)) {
+      rb_raise(rb_eValueError, "expected a list of offset lists.");
+    }
+
+    const int64_t noffsets = RARRAY_LEN(temp);
+    if (noffsets < 2 || noffsets > INT32_MAX) {
+      rb_raise(rb_eValueError, "length of a single offset list be in [2, INT32_MAX].");
+    }
+
+    int32_t * const offsets = ndt_alloc(noffsets, sizeof(int32_t));
+    if (offsets == NULL) {
+      rb_raise(rb_eNoMemError, "no memory to allocate offsets.");
+    }
+
+    for (int32_t k = 0; k < noffsets; k++) {
+      long long x = NUM2LL(rb_ary_entry(temp, k));
+
+      if (x < 0 || x > INT32_MAX) {
+        ndt_free(offsets);
+        rb_raise(rb_eValueError, "offset must be in [0, INT32_MAX].");        
+      }
+      offsets[k] = (int32_t)x;
+    }
+
+    m->offsets[m->ndims] = ndt_offsets_from_ptr(offsets, (int32_t)noffsets, &ctx);
+    if (m->offsets[m->ndims] == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+    m->ndims++;
+  }
+
+  return 0;
 }
 
 static VALUE
@@ -905,7 +946,6 @@ void Init_ruby_ndtypes(void)
 
   /* define classes */
   cNDTypes = rb_define_class("NDTypes", rb_cObject);
-  cNDTypes_RBuf = rb_define_class_under(cNDTypes, "RBuf", rb_cObject);
   mNDTypes_GCGuard = rb_define_module_under(cNDTypes, "GCGuard");
 
   /* errors */
