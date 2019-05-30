@@ -1287,53 +1287,54 @@ class TestBufferProtocol < Minitest::Test
   end
 end # class TestBufferProtocol
 
-class TestApply < Minitest::Test
-  def test_apply
-    # Type checking and return type inference for function applications.
+# class TestApply < Minitest::Test
+#   def test_apply
+#     # Type checking and return type inference for function applications.
 
-    # Function type:
-    sig = NDT.new "Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64"
-    assert_serialize sig
+#     # Function type:
+#     sig = NDT.new "Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64"
+#     assert_serialize sig
 
-    # argument types:
-    in_types = [NDT.new("20 * 2 * 3 * int64"), NDT.new("20 * 3 * 4 * int64")]
+#     # argument types:
+#     types = [NDT.new("20 * 2 * 3 * int64"), NDT.new("20 * 3 * 4 * int64")]
 
-    spec = sig.apply(in_types)
+#     spec = sig.apply(in_types)
 
-    assert_equal spec.sig, sig
-    assert_equal spec.in_types, in_types
-    assert_equal spec.out_types, [NDT.new("20 * 2 * 4 * float64")]
-    assert_equal spec.outer_dims, 1
-  end
+#     assert_equal spec.sig, sig
+#     assert_equal spec.nin, 2
+#     assert_equal spec.nout, 1
+#     assert_equal spec.nargs, 3
+#     assert_equal spec.types, types + [NDT.new("20 * 2 * 4 * float64")]
+#   end
 
-  def test_apply_error
-    sig = NDT.new("Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64")
-    lst = [["20 * 2 * 3 * int8", "20 * 3 * 4 * int64"],
-           ["10 * 2 * 3 * int64", "20 * 3 * 4 * int64"],
-           ["20 * 2 * 100 * int64", "20 * 3 * 4 * int64"]]
+#   def test_apply_error
+#     sig = NDT.new("Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64")
+#     lst = [["20 * 2 * 3 * int8", "20 * 3 * 4 * int64"],
+#            ["10 * 2 * 3 * int64", "20 * 3 * 4 * int64"],
+#            ["20 * 2 * 100 * int64", "20 * 3 * 4 * int64"]]
 
-    lst.each do |l|
-      in_types = l.map { |x| NDT.new(x) }
-      assert_raises(TypeError) { sig.apply(in_types) }
-    end
-  end
-end # class TestApply
+#     lst.each do |l|
+#       in_types = l.map { |x| NDT.new(x) }
+#       assert_raises(TypeError) { sig.apply(in_types) }
+#     end
+#   end
+# end # class TestApply
 
-class TestBroadcast < Minitest::Test
-  def test_broadcast
-    BROADCAST_TEST_CASES.each do |d|
-      sig, args, kwargs, expected = d.values
-      
-      spec = sig.apply(c.in_types)
+# class TestBroadcast < Minitest::Test
+#   def test_broadcast
+#     BROADCAST_TEST_CASES.each do |d|
+#       sig, args, kwargs, expected = d.values
+#       spec = sig.apply(args, out: kwargs)
 
-      assert_equal spec.size, c.size
-
-      spec.zip(c).each do |v, u|
-        assert_equal v, u
-      end
-    end
-  end
-end # class TestBroadcast
+#       assert_equal(spec.flags, expected.flags)
+#       assert_equal(spec.outer_dims, expected.outer_dims)
+#       assert_equal(spec.nin, expected.nin)
+#       assert_equal(spec.nout, expected.nout)
+#       assert_equal(spec.nargs, expected.nargs)
+#       assert_equal(spec.types, expected.types)
+#     end
+#   end
+# end # class TestBroadcast
 
 class LongFixedDimTests < Minitest::Test
   def test_steps_random

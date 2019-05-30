@@ -638,66 +638,9 @@ NDTypes_strides(VALUE self)
 }
 
 static VALUE
-NDTypes_apply(VALUE self, VALUE types)
+NDTypes_apply(VALUE self, int argc, VALUE* argv)
 {
-  NDT_STATIC_CONTEXT(ctx);
-  NdtObject *self_p, *x_p;
-  ndt_t *sig;
-  const ndt_t *in[NDT_MAX_ARGS];
-  ndt_apply_spec_t spec;
-  VALUE flags, out, broadcast, outer_dims;
-  size_t nin;
-  int i;
-
-  /* Check_Type(types, T_ARRAY); */
-
-  /* GET_NDT(self, self_p); */
-  /* sig = NDT(self_p); */
-
-  /* nin = RARRAY_LEN(types); */
-  /* if (nin > NDT_MAX_ARGS) { */
-  /*   rb_raise(rb_eArgError, "maximum number of arguments is %d", NDT_MAX_ARGS); */
-  /* } */
-
-  /* for (i = 0; i < nin; ++i) { */
-  /*   VALUE temp = rb_ary_entry(types, i); */
-  /*   if (!NDT_CHECK_TYPE(temp)) { */
-  /*     rb_raise(rb_eTypeError, "argument types must be NDT."); */
-  /*   } */
-  /*   in[i] = rb_ndtypes_const_ndt(temp); */
-  /* } */
-
-  /* spec = ndt_apply_spec_empty; */
-  /* /\* if (ndt_typecheck(&spec, sig, in, (int)nin, NULL, NULL, &ctx) < 0) { *\/ */
-  /* /\*   seterr(&ctx); *\/ */
-  /* /\*   raise_error(); *\/ */
-  /* /\* } *\/ */
-
-  /* flags = rb_str_new2(ndt_apply_flags_as_string(&spec)); */
-  /* out = rb_ary_new2(spec.nout); */
-
-  /* for (i = spec.nout - 1; i >= 0 ; i--) { */
-  /*   VALUE x = NdtObject_alloc(); */
-  /*   GET_NDT(x, x_p); */
-  /*   //    NDT(x_p) = spec.out[i]; */
-  /*   //  spec.out[i]= NULL; spec.nout--; */
-  /*   rb_ary_store(out, i, x); */
-  /* } */
-
-  /* //  broadcast = rb_ary_new2(spec.nbroadcast); */
-
-  /* for (i = spec.nbroadcast-1; i >= 0; i--) { */
-  /*   VALUE x = NdtObject_alloc(); */
-  /*   GET_NDT(x, x_p); */
-  /*   //    NDT(x_p) = spec.broadcast[i]; */
-  /*   //    spec.broadcast[i] = NULL; spec.nbroadcast--; */
-  /*   //    rb_ary_store(broadcast, i, x); */
-  /* } */
-
-  /* outer_dims = LL2NUM(spec.outer_dims); */
-
-  /* return rb_funcall(rb_const_get(cNDTypes, rb_intern("ApplySpec")), rb_intern("new"), */
-  /*                   6, flags, self, types, out, broadcast, outer_dims); */
+  rb_raise(rb_eNotImplementedError, "NDT#apply is not implemented.");
 }
 
 /****************************************************************************/
@@ -969,7 +912,7 @@ void Init_ruby_ndtypes(void)
   rb_define_method(cNDTypes, "pretty", NDTypes_pretty, 0);
   rb_define_method(cNDTypes, "shape", NDTypes_shape, 0);
   rb_define_method(cNDTypes, "strides", NDTypes_strides, 0);
-  rb_define_method(cNDTypes, "apply", NDTypes_apply, 1);
+  rb_define_method(cNDTypes, "apply", NDTypes_apply, -1);
 
   /* Boolean functions */
   rb_define_method(cNDTypes, "concrete?", NDTypes_ndt_is_concrete, 0);
