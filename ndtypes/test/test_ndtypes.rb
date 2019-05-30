@@ -163,20 +163,14 @@ class TestVarDim < Minitest::Test
 
     # too many dimensions.
     assert_raises(TypeError) { NDT.new("var * " * (MAX_DIM + 1) + "float64") }
-
-    # nested var is disallowed.
-    assert_raises(TypeError) { NDT.new("2 * {a: var * complex128}") }
-    assert_raises(TypeError) { NDT.new("var * {a: var * complex128}") }
-    assert_raises(TypeError) { NDT.new("var * ref(var * string)") }
-    assert_raises(TypeError) { NDT.new("var * SomeConstr(var * string)") }
   end
 
   def test_var_dim_external_offsets
     # Invalid offsets.
-    assert_raises(TypeError) { NDT.new( "int8", [""]) }
-    assert_raises(TypeError) { NDT.new( "int8", [0]) }
-    assert_raises(TypeError) { NDT.new( "int8", [0, 2]) }
-    assert_raises(TypeError) { NDT.new( "int8", {}) }
+    assert_raises(ValueError) { NDT.new( "int8", [""]) }
+    assert_raises(ValueError) { NDT.new( "int8", [0]) }
+    assert_raises(ValueError) { NDT.new( "int8", [0, 2]) }
+    assert_raises(ValueError) { NDT.new( "int8", {}) }
 
     assert_raises(ValueError) { NDT.new( "int8", []) }
     assert_raises(ValueError) { NDT.new( "int8", [[0]]) }
@@ -190,14 +184,11 @@ class TestVarDim < Minitest::Test
     assert_raises(ValueError) { NDT.new( "int8", [[0, 2], [0, 10, 30, 40]]) }
 
     # Implicit mixing of var and fixed.
-    assert_raises(TypeError) { NDT.new( "10 * int8", [[0, 2], [0, 10, 20]]) }
+    assert_raises(ValueError) { NDT.new( "10 * int8", [[0, 2], [0, 10, 20]]) }
 
     # Abstract dtype.
     assert_raises(ValueError) { NDT.new( "N * int8", [[0, 2], [0, 10, 20]]) }
     assert_raises(ValueError) { NDT.new( "var * int8", [[0, 2], [0, 10, 20]]) }
-
-    # Mixing external and internal offsets.
-    assert_raises(TypeError) { NDT.new( "var(offsets=[0,2,10]) * int8", [[0, 1], [0, 2]])}
   end
 end
 
