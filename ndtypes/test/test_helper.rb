@@ -48,77 +48,102 @@ def verify_datasize t
 end
 
 BROADCAST_TEST_CASES = [
-  NDT::ApplySpec.new(
-    'C|Fortran|Strided|Xnd',
-    NDT.new("uint8 -> float64"),
-    [NDT.new("uint8")],
-    [NDT.new("float64")],
-    [],
-     0),
+  {
+    sig: NDT.new("uint8 -> float64"),
+    args: [NDT.new('uint8')],
+    out: nil,
+    spec:
+    NDT::ApplySpec.new( 'C|Fortran|Strided|Xnd',
+      0,
+      1,
+      1,
+      2,
+      [NDT.new("uint8"), NDT.new("float64")])
+  },
 
-  NDT::ApplySpec.new(
-    'Elemwise1D|C|Fortran|Strided|Xnd',
-    NDT.new("... * uint8 -> ... * float64"),
-    [NDT.new("2 * uint8")],
-    [NDT.new("2 * float64")],
-    [NDT.new("2 * uint8")],
-     1),
+  {
+    sig: NDT.new("... * uint8 -> ... * float64"),
+    args: [NDT.new("2 * uint8")],
+    out: nil,
+    spec:   NDT::ApplySpec.new(
+      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd',
+      1,
+      1,
+      1,
+      2,
+      [NDT.new("2 * uint8"), NDT.new("2 * float64")])
+  },
 
-  NDT::ApplySpec.new(
-    'C|Fortran|Strided|Xnd',
-    NDT.new("F[... * uint8] -> F[... * float64]"),
-    [NDT.new("!2 * 3 * uint8")],
-    [NDT.new("!2 * 3 * float64")],
-    [NDT.new("!2 * 3 * uint8")],
-     2),
+  {
+    sig: NDT.new("F[... * uint8] -> F[... * float64]"),
+    args: [NDT.new("!2 * 3 * uint8")],
+    out: nil,
+    spec:   NDT::ApplySpec.new(
+      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd',
+      2,
+      1,
+      1,
+      2,
+      [NDT.new("!2 * 3 * uint8"), NDT.new("!2 * 3 * float64")])
+  },
 
-  NDT::ApplySpec.new(
-    'C|Fortran|Strided|Xnd',
-    NDT.new("... * uint8 -> ... * float64"),
-    [NDT.new("fixed(shape=2, step=10) * uint8")],
-    [NDT.new("2 * float64")],
-    [NDT.new("fixed(shape=2, step=10) * uint8")],
-     1),
+  {
+    sig: NDT.new("... * uint8 -> ... * float64"),
+    args: [NDT.new("fixed(shape=2, step=10) * uint8")],
+    out: nil,
+    spec: NDT::ApplySpec.new(
+      'OptS|C|Fortran|Strided|Xnd',
+      1,
+      1,
+      1,
+      2,
+      [NDT.new("fixed(shape=2, step=10) * uint8"), NDT.new("2 * float64")])
+  },
+  
+  {
+    sig: NDT.new("... * N * uint8 -> ... * N * float64"),
+    args: [NDT.new("2 * 3 * uint8")],
+    out: nil,
+    spec: NDT::ApplySpec.new(
+      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd' ,
+      1,
+      1,
+      1,
+      2,
+      [NDT.new("2 * 3 * uint8"), NDT.new("2 * 3 * float64")]
+    )
+  },
 
-  NDT::ApplySpec.new(
-    'Strided|Xnd',
-    NDT.new("... * N * uint8 -> ... * N * float64"),
-    [NDT.new("fixed(shape=2, step=10) * uint8")],
-    [NDT.new("2 * float64")],
-    [NDT.new("fixed(shape=2, step=10) * uint8")],
-     0),
+  {
+    sig: NDT.new("... * N * M * uint8 -> ... * N * M * float64"),
+    args: [NDT.new("2 * 3 * uint8")],
+    out: nil,
+    spec: NDT::ApplySpec.new(
+      'C|Strided|Xnd',
+      0,
+      1,
+      1,
+      2,
+      [NDT.new("2 * 3 * uint8"), NDT.new("2 * 3 * float64")]
+    )
+  },
 
-  NDT::ApplySpec.new(
-    'C|Fortran|Strided|Xnd',
-    NDT.new("... * N * uint8 -> ... * N * float64"),
-    [NDT.new("2 * 3 * uint8")],
-    [NDT.new("2 * 3 * float64")],
-    [NDT.new("2 * 3 * uint8")],
-     1),
-
-  NDT::ApplySpec.new(
-    'C|Strided|Xnd',
-    NDT.new("... * N * M * uint8 -> ... * N * M * float64"),
-    [NDT.new("2 * 3 * uint8")],
-    [NDT.new("2 * 3 * float64")],
-    [NDT.new("2 * 3 * uint8")],
-     0),
-
-  NDT::ApplySpec.new(
-    'Xnd',
-    NDT.new("N * D * float64 -> P * float64"),
-    [NDT.new("2 * 10 * float64")],
-    [NDT.new("P * float64")],
-    [],
-     0),
-
-  NDT::ApplySpec.new(
-    'C|Fortran|Xnd',
-    NDT.new("var... * float64 -> var... * float64"),
-    [NDT.new("var(offsets=[0,2]) * var(offsets=[0,4,11]) * float64")],
-    [NDT.new("var(offsets=[0,2]) * var(offsets=[0,4,11]) * float64")],
-    [],
-     2)
+  {
+    sig: NDT.new("var... * float64 -> var... * float64"),
+    args: [NDT.new("var(offsets=[0,2]) * var(offsets=[0,4,11]) * float64")],
+    out: nil,
+    spec: NDT::ApplySpec.new(
+      'Xnd',
+      2,
+      1,
+      1,
+      2,
+      [
+        NDT.new("var(offsets=[0,2]) * var(offsets=[0,4,11]) * float64"), 
+        NDT.new("var(offsets=[0,2]) * var(offsets=[0,4,11]) * float64")
+      ]
+    )
+  }
 ]
 
 Struct.new("M", :itemsize, :align)

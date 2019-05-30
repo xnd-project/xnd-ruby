@@ -1321,8 +1321,10 @@ end # class TestApply
 
 class TestBroadcast < Minitest::Test
   def test_broadcast
-    BROADCAST_TEST_CASES.each do |c|
-      spec = c.sig.apply(c.in_types)
+    BROADCAST_TEST_CASES.each do |d|
+      sig, args, kwargs, expected = d.values
+      
+      spec = sig.apply(c.in_types)
 
       assert_equal spec.size, c.size
 

@@ -109,7 +109,7 @@ NdtObject_alloc(void)
 
   ndt_p = ZALLOC(NdtObject);
 
-  //  ndt_p->rbuf = 0;
+  ndt_p->hash = -1;
   ndt_p->ndt = NULL;
 
   return WRAP_NDT(cNDTypes, ndt_p);
@@ -120,7 +120,7 @@ NdtObject_alloc(void)
 static void
 NdtObject_dmark(void * self)
 {
-  NdtObject * ndt = (NdtObject*)self;
+  //  NdtObject * ndt = (NdtObject*)self;
   
   //  rb_gc_mark(ndt->rbuf);
 }
@@ -132,6 +132,7 @@ NdtObject_dfree(void * self)
   NdtObject * ndt = (NdtObject*)self;
   
   //  rb_ndtypes_gc_guard_unregister(ndt);
+  ndt_decref(NDT(ndt));
   xfree(ndt);
 }
 
@@ -639,14 +640,14 @@ NDTypes_strides(VALUE self)
 static VALUE
 NDTypes_apply(VALUE self, VALUE types)
 {
-  /* NDT_STATIC_CONTEXT(ctx); */
-  /* NdtObject *self_p, *x_p; */
-  /* ndt_t *sig; */
-  /* const ndt_t *in[NDT_MAX_ARGS]; */
-  /* ndt_apply_spec_t spec; */
-  /* VALUE flags, out, broadcast, outer_dims; */
-  /* size_t nin; */
-  /* int i; */
+  NDT_STATIC_CONTEXT(ctx);
+  NdtObject *self_p, *x_p;
+  ndt_t *sig;
+  const ndt_t *in[NDT_MAX_ARGS];
+  ndt_apply_spec_t spec;
+  VALUE flags, out, broadcast, outer_dims;
+  size_t nin;
+  int i;
 
   /* Check_Type(types, T_ARRAY); */
 
