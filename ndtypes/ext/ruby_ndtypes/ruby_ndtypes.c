@@ -13,7 +13,7 @@ static const rb_data_type_t NdtObject_type;
 VALUE cNDTypes;
 VALUE mNDTypes_GCGuard;
 
-static VALUE rb_eValueError;
+static VALUE rb_eValueError, rb_eNotImplementedError;
 
 /* ------------------------------------------ */
 /****************************************************************************/
@@ -894,6 +894,7 @@ void Init_ruby_ndtypes(void)
 
   /* errors */
   rb_eValueError = rb_define_class("ValueError", rb_eRuntimeError);
+  rb_eNotImplementedError = rb_define_class("NotImplementedError", rb_eRuntimeError);
 
   /* Initializers */
   rb_define_alloc_func(cNDTypes, NDTypes_allocate);
