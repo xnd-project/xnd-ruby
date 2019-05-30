@@ -170,7 +170,7 @@ class TestVarDim < Minitest::Test
     assert_raises(ValueError) { NDT.new( "int8", [""]) }
     assert_raises(ValueError) { NDT.new( "int8", [0]) }
     assert_raises(ValueError) { NDT.new( "int8", [0, 2]) }
-    assert_raises(ValueError) { NDT.new( "int8", {}) }
+    assert_raises(TypeError) { NDT.new( "int8", {}) }
 
     assert_raises(ValueError) { NDT.new( "int8", []) }
     assert_raises(ValueError) { NDT.new( "int8", [[0]]) }
@@ -184,7 +184,7 @@ class TestVarDim < Minitest::Test
     assert_raises(ValueError) { NDT.new( "int8", [[0, 2], [0, 10, 30, 40]]) }
 
     # Implicit mixing of var and fixed.
-    assert_raises(ValueError) { NDT.new( "10 * int8", [[0, 2], [0, 10, 20]]) }
+    assert_raises(TypeError) { NDT.new( "10 * int8", [[0, 2], [0, 10, 20]]) }
 
     # Abstract dtype.
     assert_raises(ValueError) { NDT.new( "N * int8", [[0, 2], [0, 10, 20]]) }
@@ -1141,7 +1141,7 @@ class TestBufferProtocol < Minitest::Test
       ["(2,19)T{<b:a:xxxQ:b:}", 12, 4],
       ["(31,221)T{<b:a:xxxxxxxQ:b:}", 16, 8],
       ["(2,3,10)T{<b:a:xxxxxxxxxxxxxxxQ:b:xxxxxxxx}", 32, 16],
-      ["(2,10)T{=L:a:(2,3)D:b:}", 100, 1]
+      ["(2,10)T{=L:a:(2,3)Zd:b:}", 100, 1]
     ]
 
     test_error_cases = [
@@ -1259,7 +1259,7 @@ class TestBufferProtocol < Minitest::Test
     end
 
     # complex64
-    fmt = 'F'
+    fmt = 'Zf'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format f
@@ -1268,7 +1268,7 @@ class TestBufferProtocol < Minitest::Test
     end
 
     # complex128
-    fmt = 'D'
+    fmt = 'Zd'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format(f)
