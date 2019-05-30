@@ -13,7 +13,7 @@ static const rb_data_type_t NdtObject_type;
 VALUE cNDTypes;
 VALUE mNDTypes_GCGuard;
 
-static VALUE rb_eValueError, rb_eNotImplementedError;
+static VALUE rb_eValueError;
 
 /* ------------------------------------------ */
 /****************************************************************************/
@@ -640,7 +640,7 @@ NDTypes_strides(VALUE self)
 static VALUE
 NDTypes_apply(VALUE self, int argc, VALUE* argv)
 {
-  rb_raise(rb_eNotImplementedError, "NDT#apply is not implemented.");
+  rb_raise(rb_eNotImpError, "NDT#apply is not implemented.");
 }
 
 /****************************************************************************/
@@ -894,7 +894,6 @@ void Init_ruby_ndtypes(void)
 
   /* errors */
   rb_eValueError = rb_define_class("ValueError", rb_eRuntimeError);
-  rb_eNotImplementedError = rb_define_class("NotImplementedError", rb_eRuntimeError);
 
   /* Initializers */
   rb_define_alloc_func(cNDTypes, NDTypes_allocate);
