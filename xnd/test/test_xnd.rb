@@ -77,19 +77,31 @@ class TestFixedDim < Minitest::Test
         assert_equal t, x.type
         assert_equal vv, x.value
         assert_equal vv.size, x.size
+        assert_true x.type.c_contiguous?
       end
     end
+
+    assert_raises(ValueError) { XND.empty("?3 * int64") }
+    assert_raises(ValueError) { XND.empty("?2 * 3 * int64") }
+    assert_raises(ValueError) { XND.empty("2 * ?3 * int64") }
+    assert_raises(ValueError) { XND.empty("?2 * ?3 * int64") }
   end
 
   def test_overflow
     assert_raises(ValueError) { XND.empty "2147483648 * 2147483648 * 2 * uint8" }
   end
 
-  def test_equality
+  def test_equality # richcompare
     x = XND.new [1,2,3,4]
 
     assert_strict_equal x, XND.new([1,2,3,4])
 
+    # compare int vs. float
+    x = XND.new([1,2,3], type: "int64")
+    y = XND.new([1,2,3], type: "float32")
+    assert_equal x, y
+    assert_strict_unequal x, y
+    
     # different shape and/or data.
     assert_strict_unequal x, XND.new([1,2,3,5])
     assert_strict_unequal x, XND.new([1,2,3,100])
@@ -143,7 +155,6 @@ class TestFixedDim < Minitest::Test
           y = XND.new vv, type: uuu
           assert_strict_equal x, y
         end
-
       end
     end # EQUAL_TEST_CASES.each
 
@@ -206,7 +217,7 @@ class TestFixedDim < Minitest::Test
     end
   end
 
-  def test_fixed_dim_indexing
+  def test_fixed_dim_indexing # subscript
     # returns single number slice for 1D array/1 number
     xnd = XND.new([1,2,3,4])
     assert_equal xnd[1], XND.new(2)
@@ -225,7 +236,7 @@ class TestFixedDim < Minitest::Test
 
     # returns the entire array
     x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
-    assert_equal x[0..Float::INFINITY], x
+    assert_equal(x[0..Float::INFINITY], x)
 
     [
       [
@@ -375,6 +386,8 @@ class TestFortran < Minitest::Test
         assert_equal t, x.type
         assert_equal vv, x.value
         assert_equal vv.size, x.size
+        check_serialize x
+        assert_true x.type.f_contiguous?
       end
     end
   end
@@ -414,6 +427,8 @@ class TestFortran < Minitest::Test
             arr_s = get_inf_or_normal_range start, stop, exclude_end
             r = Range.new start, stop, exclude_end
             assert_equal x[r].value, arr[arr_s]
+            check_serialize(x[r])
+            check_copy_contiguous(x[r])
           end
         end
       end
@@ -645,6 +660,8 @@ class TestVarDim < Minitest::Test
         assert_equal x.type, t
         assert_equal x.value, vv
         assert_equal x.size, vv.size
+        check_copy_contiguous x
+        check_serialize x
       end
     end
 
@@ -659,19 +676,22 @@ class TestVarDim < Minitest::Test
     y = x[1, 2]
     assert_equal y.is_a?(XND), true
     assert_equal y.value, inner
+
+    # test errors with empty
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 3]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
   end
 
   def test_var_dim_assign
     ### regular data
-
     x = XND.empty "var(offsets=[0,2]) * var(offsets=[0,2,5]) * float64"
     v = [[0.0, 1.0], [2.0, 3.0, 4.0]]
-
 
     # assigns full slice
     x[INF] = v
     assert_equal x.value, v
-
 
     # assigns subarray
     x[INF] = v
@@ -756,6 +776,12 @@ class TestVarDim < Minitest::Test
 
     spec = sig.apply([x.type])
     assert type_equal(spec.out_types[0], x.type)
+
+    y = x[0..-1]
+    spec = sig.apply(y.type)
+    assert type_equal(sepc.types[1], x.type)
+
+    # FIXME: port these tests from the python tests once stepped ranges are ready.
   end
 
   def test_var_dim_equality
@@ -801,14 +827,19 @@ class TestVarDim < Minitest::Test
     x = XND.new([[1], [4,5], [6,7,8], [9,10,11,12]])
     
     y = XND.new([[1], [4,5]])
+    z = x[0..2]
     assert_strict_equal x[0..1], y
+    assert_false z.type.var_contiguous?
 
     y = XND.new([[4,5], [6,7,8]])
+    z = x[0..-2]
     assert_strict_equal x[1..2], y
+    assert_false z.type.var_contiguous?
 
     # TODO: make this pass after Ruby 2.6 step-range
     # y = XND.new([[12,11,10,9], [5,4]])
     # assert_strict_equal x[(0..) % -2, (0..) % -1], y
+    # assert_false z.type.var_contiguous?
 
     EQUAL_TEST_CASES.each do |struct|
       v = struct.v
@@ -825,11 +856,15 @@ class TestVarDim < Minitest::Test
         x = XND.new vv, type: ttt
         y = XND.new vv, type: ttt
         assert_strict_equal x, y
+        check_copy_contiguous x
+        check_serialize x
 
         unless u.nil? 
           uuu = NDT.new uu
           y = XND.new vv, type: uuu
           assert_strict_equal x, y
+          check_copy_contiguous y
+          check_serialize y
         end
       end
     end
@@ -865,6 +900,8 @@ class TestVarDim < Minitest::Test
           assert_strict_unequal x, y
         end
 
+        check_copy_contiguous x
+
         unless u.nil?
           uuu = NDT.new uu
           y = XND.new vv, type: uuu
@@ -873,6 +910,8 @@ class TestVarDim < Minitest::Test
           else
             assert_strict_unequal x, y
           end
+
+          check_copy_contiguous y
         end
 
         unless w.nil?
@@ -886,9 +925,51 @@ class TestVarDim < Minitest::Test
             y[*indices] = w
             assert_strict_unequal x, y
           end
+
+          check_copy_contiguous y
         end
       end
     end
+  end
+
+  def test_var_dim_nested
+    t = "var(offsets=[0,2]) * var(offsets=[0,1,3]) * (var(offsets=[0,2]) * var(offsets=[0,3,7]) * float32, int64)"
+    v = [
+          [[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0, 6.0]], -1],
+          [[[[7.0, 8.0, 9.0], [10.0, 11.0, 12.0, 13.0]], -2],
+          [[14.0, 15.0, 16.0], [17.0, 18.0, 19.0, 20.0]], -3]
+        ]
+    x = XND.new v, type: t
+
+    assert_equal(x, v)
+    assert_equal(x.value, v)
+
+    assert_equal(x[0], v[0])
+    assert_equal(x[1], v[1])
+
+    assert_equal(x[0,0], v[0][0])
+    assert_equal(x[1,0], v[1][0])
+    assert_equal(x[1,1], v[1][1])
+
+    assert_equal(x[0,0,0], v[0][0][0])
+    assert_equal(x[0,0,1], v[0][0][1])
+
+    assert_equal(x[1,0,0], v[1][0][0])
+    assert_equal(x[1,0,1], v[1][0][1])
+
+    assert_equal(x[1,1,0], v[1][1][0])
+    assert_equal(x[1,1,1], v[1][1][1])
+
+    assert_equal(x[0,0,0,0], v[0][0][0][0])
+    assert_equal(x[0,0,0,1], v[0][0][0][1])
+
+    assert_equal(x[0,0,0,0], v[0][0][0][0])
+    assert_equal(x[0,0,0,1], v[0][0][0][1])
+
+    assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
+    assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
+
+    check_copy_contiguous(x)
   end
 end # class TestVarDim
 
@@ -903,7 +984,7 @@ class TestSymbolicDim < Minitest::Test
       ].each do |err, ss|
         t = NDT.new ss
         
-        assert_raises(ValueError) { XND.empty t } 
+        assert_raises(err) { XND.empty t } 
       end
     end
   end
@@ -977,6 +1058,7 @@ class TestTuple < Minitest::Test
     x[2] = v[2]
 
     assert_equal x.value, v
+    check_copy_contiguous x
 
     # assigns new each element
     v = [-2.5+125i, nil, nil]
@@ -985,6 +1067,7 @@ class TestTuple < Minitest::Test
     x[2] = v[2]
 
     assert_equal x.value, v
+    check_copy_contiguous x
 
     # assigns tuple and individual values
     x = XND.new([
@@ -995,6 +1078,7 @@ class TestTuple < Minitest::Test
 
     assert_equal x[0][1].value, 200000000
     assert_equal x[0, 1].value, 200000000
+    check_copy_contiguous x
   end
 
   def test_tuple_overflow
@@ -1007,6 +1091,7 @@ class TestTuple < Minitest::Test
     lst = [[nil, 1, 2], [3, nil, 4], [5, 6, nil]]
     x = XND.new(lst, dtype: "(?int64, ?int64, ?int64)")
     assert_equal x.value, lst
+    assert_equal x.dtype, NDT.new("(?int64, ?int64, ?int64)")
   end
 
   def test_tuple_equality
@@ -1053,6 +1138,7 @@ class TestTuple < Minitest::Test
 
     # simple equality
     assert_strict_equal x, y
+    check_copy_contiguous x
 
     # unequal after assignment
     w = y[0].value
@@ -1109,6 +1195,7 @@ class TestTuple < Minitest::Test
         x = XND.new vv, type: ttt
         y = XND.new(vv, type: ttt)
         assert_strict_equal x, y
+        check_copy_contiguous x
         
         unless u.nil?
           uuu = NDT.new uu
@@ -1144,6 +1231,8 @@ class TestTuple < Minitest::Test
         else
           assert_strict_unequal x, y
         end
+
+        check_copy_contiguous x
 
         unless u.nil?
           uuu = NDT.new uu        
@@ -1204,6 +1293,7 @@ class TestRecord < Minitest::Test
     x['z'] = v['z']
 
     assert_equal x.value, v
+    check_copy_contiguous x
 
     ### optional data
     x = XND.empty "{x: complex64, y: ?bytes, z: ?string}"
@@ -1216,6 +1306,20 @@ class TestRecord < Minitest::Test
       x['z'] = v['z']
       
       assert_equal x.value, v
+      check_copy_contiguous x
+
+      v = {'x': -2.5+125j, 'y': None, 'z': None}
+      x['x'] = v['x']
+      x['y'] = v['y']
+      x['z'] = v['z']
+      assert_equal(x.value, v)
+      check_copy_contiguous(x)
+
+      x = XND.new({'x': "abc", 'y': 100, 'z': 10.5})
+      x[0][1] = 20000000
+      assert_equal(x[0][1], 20000000)
+      assert_equal(x[0, 1], 20000000)
+      check_copy_contiguous(x)
     end
   end
 
@@ -1234,6 +1338,8 @@ class TestRecord < Minitest::Test
     x = XND.new(lst, dtype: "{a: ?int64, b: ?int64, c: ?int64}")
 
     assert_equal x.value, lst
+    check_copy_contiguous x
+    assert_equal x.dtype, "{a: ?int64, b: ?int64, c: ?int64}"
   end
 
   def test_record_equality
@@ -1276,12 +1382,14 @@ class TestRecord < Minitest::Test
     x = XND.new v, type: t
     y = XND.new v, type: t
     assert_strict_equal x, y
+    check_copy_contiguous x
 
     w = y[0].value
     y[0] = 11
     assert_strict_unequal x, y
     y[0] = w
     assert_strict_equal x, y
+    check_copy_contiguous x
 
     w = y[1].value
     y[1] = "\U00001234\U00001001abx"
@@ -1322,6 +1430,7 @@ class TestRecord < Minitest::Test
         ttt = NDT.new tt
 
         x = XND.new vv, type: ttt
+        check_copy_contiguous x
 
         y = XND.new vv, type: ttt
         assert_strict_equal x, y
@@ -1330,6 +1439,7 @@ class TestRecord < Minitest::Test
           uuu = NDT.new uu
           y = XND.new vv, type: uuu
           assert_strict_equal x, y
+          check_copy_contiguous y
         end
       end
     end
@@ -1351,6 +1461,7 @@ class TestRecord < Minitest::Test
         ttt = NDT.new tt
 
         x = XND.new vv, type: ttt
+        check_copy_contiguous x
 
         y = XND.new vv, type: ttt
         if eq
@@ -1367,19 +1478,30 @@ class TestRecord < Minitest::Test
           else
             assert_strict_unequal x, y
           end
+
+          check_copy_contiguous y
         end
 
         unless w.nil?
           y = XND.new vv, type: ttt
           y[*indices] = w
-
           assert_strict_unequal x, y
+          check_copy_contiguous y
         end
       end
     end
   end
 end # class TestRecord
 
+class TestUnion < Minitest::Test
+  def test_union_empty
+    
+  end
+
+  def test_union_assign
+
+  end
+end
 class TestRef < Minitest::Test
   def test_ref_empty
     DTYPE_EMPTY_TEST_CASES.each do |v, s|

@@ -52,9 +52,8 @@ headers = File.expand_path(File.join(File.dirname(__FILE__) + "/include/"))
 find_library("xnd", nil, binaries)
 find_header("xnd.h", headers)
 
-FileUtils.copy_file File.expand_path(File.join(File.dirname(__FILE__) +
-                                               "/ruby_xnd.h")),
-                    "#{headers}/ruby_xnd.h"
+FileUtils.copy_file(File.expand_path(File.join(File.dirname(__FILE__) + "/ruby_xnd.h")),
+  "#{headers}/ruby_xnd.h")
 
 dir_config("xnd", [headers], [binaries])
 

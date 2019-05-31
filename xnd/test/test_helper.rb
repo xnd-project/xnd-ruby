@@ -34,6 +34,29 @@ def get_inf_or_normal_range start, stop, exclude_end
   end
 end
 
+def check_copy_contiguous x
+  y = x.copy_contiguous
+  xv = x.value
+  yv = y.value
+
+  if have_none(xv) && have_none(yv)
+    assert_equal xv, yv
+  else
+    assert_equal x, y
+  end
+end
+
+def check_serialize x
+  begin
+    b = x.serialize
+    y = x.deserialize(b)
+  rescue NotImplementedError
+    return
+  end
+
+  assert_equal x, y
+end
+
 # ======================================================================
 #                             Primitive types 
 # ======================================================================
