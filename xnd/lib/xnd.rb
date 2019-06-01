@@ -278,7 +278,8 @@ class XND < RubyXND
     end
   end
   
-  def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil, dtypedef: nil, device: nil
+  def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil,
+      dtypedef: nil, device: nil
     if [type, dtype, levels, typedef, dtypedef].count(nil) < 2
       raise ArgumentError, "the 'type', 'dtype', 'levels' and 'typedef' arguments are "
       "mutually exclusive."
@@ -316,5 +317,17 @@ class XND < RubyXND
     super(type, data, device)
   end
 
+  class << self
+    def empty type, device: nil
+      if device
+        name, no = device.split ":"
+        no = (no == "managed" ? -1 : no.to_i)
+        device = [name, no]
+      end
+      
+      RubyXND.empty type, device
+    end
+  end
+
   alias :to_a :value
-end
+end # class XND

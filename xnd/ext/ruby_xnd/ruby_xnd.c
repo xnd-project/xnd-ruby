@@ -954,14 +954,31 @@ RubyXND_allocate(VALUE klass)
   return WRAP_XND(klass, xnd);
 }
 
+static uint32_t
+device_flags(VALUE array)
+{
+  VALUE device, no;
+
+  Check_Type(array, T_ARRAY);
+  /* FIXME: implement this. */
+}
+
 /* Initialize a RubyXND object. */
 static VALUE
 RubyXND_initialize(VALUE self, VALUE type, VALUE data, VALUE device)
 {
   VALUE mblock;
   XndObject *xnd_p;
+  uint32_t flags = 0;
 
-  mblock = mblock_from_typed_value(type, data);
+  if (device != Qnil) {
+    flags = device_flags(device);
+    if (flags == UINT32_MAX) {
+      rb_raise(rb_eValueError, "device ID cannot be handled.");
+    }
+  }
+
+  mblock = mblock_from_typed_value(type, data, flags);
   GET_XND(self, xnd_p);
 
   XND_from_mblock(xnd_p, mblock);
@@ -1743,14 +1760,7 @@ XND_array_store(int argc, VALUE *argv, VALUE self)
     rb_raise(rb_eIndexError, "wrong kind of key in []=");
   }
 
-  if (flags & KEY_SLICE) {
-    x = xnd_multikey(&self_p->xnd, indices, len, &ctx);
-    free_type = 1;
-  }
-  else {
-    x = xnd_subtree(&self_p->xnd, indices, len, &ctx);
-  }
-
+  x = xnd_subscript(&self_p->xnd, indices, len, &ctx);
   if (x.ptr == NULL) {
     seterr(&ctx);
     raise_error();
@@ -1772,9 +1782,7 @@ XND_array_store(int argc, VALUE *argv, VALUE self)
     ret = mblock_init(&x, value);
   }
 
-  if (free_type) {
-    ndt_del((ndt_t *)x.type);
-  }
+  ndt_decref(x.type);
 
   return value;
 }
@@ -1810,16 +1818,21 @@ XND_short_value(VALUE self, VALUE maxshape)
 /*************************** Singleton methods ********************************/
 
 static VALUE
-XND_s_empty(VALUE klass, VALUE type)
+RubyXND_s_empty(VALUE klass, VALUE type, VALUE device)
 {
   XndObject *self_p;
   VALUE self, mblock;
+  uint32_t flags = 0;
 
   self = XndObject_alloc();
   GET_XND(self, self_p);
+
+  if (device != Qnil) {
+    flags = device_flags(device);
+  }
   
   type = rb_ndtypes_from_object(type);
-  mblock = mblock_empty(type);
+  mblock = mblock_empty(type, flags);
 
   XND_from_mblock(self_p, mblock);
   rb_xnd_gc_guard_register(self_p, mblock);
@@ -1888,14 +1901,14 @@ rb_xnd_from_xnd(xnd_t *x)
 
 /* Create an XND object of type ndt_t */
 VALUE
-rb_xnd_empty_from_type(ndt_t *t)
+rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags)
 {
   MemoryBlockObject *mblock_p;
   XndObject *xnd_p;
   VALUE type, mblock, xnd;
 
   type = rb_ndtypes_from_type(t);
-  mblock = mblock_empty(type);
+  mblock = mblock_empty(type, flags);
   xnd = XndObject_alloc();
 
   GET_XND(xnd, xnd_p);
@@ -1956,6 +1969,9 @@ void Init_ruby_xnd(void)
   /* initializers */
   rb_define_alloc_func(cRubyXND, RubyXND_allocate);
   rb_define_method(cRubyXND, "initialize", RubyXND_initialize, 3);
+
+  /* singleton methods */
+  rb_define_singleton_method(cRubyXND, "empty", RubyXND_s_empty, 2);
   
   /* instance methods */
   rb_define_method(cXND, "type", XND_type, 0);
@@ -1971,9 +1987,6 @@ void Init_ruby_xnd(void)
 
   /* iterators */
   rb_define_method(cXND, "each", XND_each, 0);
-
-  /* singleton methods */
-  rb_define_singleton_method(cXND, "empty", XND_s_empty, 1);
 
   /* GC guard */
   rb_xnd_init_gc_guard();

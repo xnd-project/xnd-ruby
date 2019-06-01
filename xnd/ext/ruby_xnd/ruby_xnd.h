@@ -49,7 +49,7 @@ extern "C" {
   /* Return true if obj is of type XND. */
   int rb_xnd_check_type(VALUE obj);
   const xnd_t * rb_xnd_const_xnd(VALUE xnd);
-  VALUE rb_xnd_empty_from_type(ndt_t *t);
+  VALUE rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags);
   VALUE rb_xnd_from_xnd(xnd_t *x);
   
   typedef struct XndObject XndObject;
