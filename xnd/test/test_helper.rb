@@ -8,6 +8,34 @@ Minitest::Test.parallelize_me!
 
 MAX_DIM = NDT::MAX_DIM
 
+def assert_equal_with_ex func, x, y
+  if x.value.nil? && y.nil?
+    return
+  end
+
+  xerr = nil
+  begin
+    xres = x.send(func)
+  rescue Exception => e
+    xerr = e.class
+  end
+
+  yerr = nil
+  begin
+    yres = y.send(func)
+  rescue Exception => e
+    yerr = e.class
+  end
+
+  if xerr.nil? && yerr.nil?
+    assert_equal xres, yres
+  elsif xerr.is_a?(TypeError) && yerr.nil? && y.is_a?(Array) && y.size == 2
+  
+  else
+    assert_equal xerr, yerr
+  end
+end
+
 def assert_strict_equal x1, x2
   assert x1.strict_equal(x2)
   assert_equal x1, x2

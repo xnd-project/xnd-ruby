@@ -1308,7 +1308,7 @@ class TestRecord < Minitest::Test
       assert_equal x.value, v
       check_copy_contiguous x
 
-      v = {'x': -2.5+125j, 'y': None, 'z': None}
+      v = {'x': -2.5+125j, 'y': nil, 'z': nil}
       x['x'] = v['x']
       x['y'] = v['y']
       x['z'] = v['z']
@@ -1495,13 +1495,217 @@ end # class TestRecord
 
 class TestUnion < Minitest::Test
   def test_union_empty
-    
+    DTYPE_EMPTY_TEST_CASES.each do |v, s|
+      [
+        [['X', v], "[X of %s]" % s],
+        [['X', {'y': v}], "[X of {y: %s}]" % s],
+        [['X', 0 * [v]], "[X of 0 * %s]" % s],
+        [['X', {'y': 0 * [v]}], "[X of {y: 0 * %s}]" % s],
+        [['X', 1 * [v]], "[X of 1 * %s]" % s],
+        [['X', 3 * [v]], "[X of 3 * %s]" % s],
+        [['X', 3 * [v]], "[X of 3 * %s | Y of complex128]" % s]
+      ].each do |vv , ss|
+        next if ss.include?("ref") || ss.include?("&")
+
+        t = NDT.new ss
+        x = XND.empty ss
+        assert_equal x.type, t
+        assert_equal x.value, vv
+      end
+    end
   end
 
   def test_union_assign
+    ### Regular data
+    x = XND.empty("[X of complex64 | Y of bytes | Z of string]")
 
+    v = ['X', 1+20i]
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
+
+    v = ['Y', "abc"]
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
+
+    v = ['Z', 'abc']
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
   end
-end
+
+  def test_union_indexing
+  ### Regular data
+    x = XND.empty "[X of complex64 | Y of bytes | Z of string]"
+    v = ['X', 1+20i]
+    x[[]] = v
+
+    assert_equal x[0], v[1]
+    assert_equal x['X'], v[1]
+    assert_raises(ValueError) { x[1] }
+    assert_raises(ValueError) { x['Y'] }
+    assert_raises(ValueError) { x[2] }
+    assert_raises(ValueError) { x['Z'] }
+    assert_raises(ValueError) { x[3] }
+    assert_raises(ValueError) { x[-1] }
+    assert_raises(ValueError) { x['A'] }
+  end
+
+  def test_union_overflow
+    s = "[a: 4611686018427387904 * uint8, b: 4611686018427387904 * uint8}"
+    assert_raises(ValueError) { XND.empty(s) }
+  end
+
+  def test_union_optional_values
+    lst = [['A', nil], ['B', 10], ['C', [nil, 'abc']]]
+    x = XND.new(lst, dtype: "[A of ?int64 | B of int64 | C of (?int64, string)]")
+    assert_equal x.value, lst
+    check_copy_contiguous x
+    assert_equal x.dtype, NDT.new("[A of ?int64 | B of int64 | C of (?int64, string)]")
+  end
+
+  def test_union_equality
+    # simple tests
+    x = XND.new(['Record', {'a' => 1, 'b' => 2.0, 'c' => '3', 'd' => '123'}],
+      type: "[Int of int64 | Record of {a: uint8, b: float32, c: string, d: bytes}]")
+
+    assert_raises(NotImplementedError) { x < x }
+    assert_raises(NotImplementedError) { x <= x }
+    assert_raises(NotImplementedError) { x > x }
+    assert_raises(NotImplementedError) { x >= x }
+
+    y = x.copy_contiguous
+    assert_strict_equal x, y
+    
+    assert_strict_unequal(x, XND.new({'z' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "123"]})
+    assert_strict_unequal(x, XND.new({'a' => 2, 'b'=> 2.0, 'c' => "3", 'd' => "123"]})
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.1, 'c' => "3", 'd' => "123"]})
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "", 'd' => "123"]})
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "345", 'd' => "123"]})
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => ""]})
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "12345"]})
+
+    # Nested structures
+    t =  ""
+      {a: uint8,
+      b: fixed_string(100, 'utf32'),
+      c: {x: complex128,
+            y: 2 * 3 * {v: [Int of int64 | Tuple of (bytes, string)],
+                      u: bytes}},
+      d: ref(string)}
+    ""
+
+    v = {
+      'a' => 10,
+      'b' => "\U00001234\U00001001abc",
+      'c' => {
+        'x' => 12.1e244+3i,
+        'y' => [
+          [
+            {'v' => ['Tuple', ["123", "456"]], 'u' => 10 * "22"},
+            {'v' => ['Int', 10], 'u' => 10 * "23"},
+            {'v' => ['Int', 20], 'u' => 10 * "24"} 
+          ],
+          [
+            {'v' => ['Int', 30], 'u' => "a" },
+            {'v' => ['Tuple', ["01234", "56789"]], 'u' => "ab"},
+            {'v' => ['Tuple', ["", ""]], 'u' => "abc" }
+          ]
+      },
+      'd' => 'xyz'
+    }
+
+    x = XND.new(v, type: t)
+    y = XND.new(v, type: t)
+
+    assert_strict_equal x, y
+    check_copy_contiguous x
+
+    w = y['c', 'y', 0, 0, 'v'].value
+    y['c', 'y', 0, 0, 'v'] = ['Int', 12345]
+    assert_strict_unequal x, y
+    y['c', 'y', 0, 0, 'v'] = w
+    assert_strict_equal x, y
+    check_copy_contiguous x
+
+    # Test corner cases and many dtypes.
+    EQUAL_TEST_CASES.each do |v, t, u, _, _|
+      [
+        [
+          ['Some', 0 * [v]], 
+          "[Int of int64 | Some of 0 * %s]" % t, 
+          "[Int of int64 | Some of 0 * %s]" % u
+        ],
+        [
+          ['Some', {'y' => 0 * [v]}], 
+          "[Float of float16 | Some of {y: 0 * %s}]" % t, 
+          "[Float of float16 | Some of {y: 0 * %s}]" % u
+        ]
+      ].each do |vv, tt, uu|
+        next if tt.include?("ref") || tt.include?("&&")
+        next if uu.include?("ref") || uu.inlcude?("&&")
+          
+        ttt = NDT.new tt
+        x = XND.new vv, type: ttt
+        check_copy_contiguous x
+
+        y = XND.new vv
+        assert_strict_equal x, y
+
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          assert_strict_equal x, y
+          check_copy_contiguous y
+        end
+      end
+    end
+
+    EQUAL_TEST_CASES.each do |v, t, u, w, eq|
+      [
+        [
+          ['Some', v], 
+          "[Some of %s]" % t, 
+          "[Some of %s]" % u, [0]
+        ],
+        [
+          ['Some', 3 * [v]], 
+          "[Some of 3 * %s]" % t, 
+          "[Some of 3 * %s]" % u, 
+          [0, 2]
+        ]
+      ].each do |vv, tt, uu, indices|
+        next if tt.include?("ref") || tt.include?("&")
+        next if uu.include?("ref") || uu.include?("&")
+
+        ttt = NDT.new tt
+        uuu = NDT.new uu
+
+        x = XND.new vv, type: ttt
+        check_copy_contiguous x
+
+        y = XND.new vv, type: ttt
+        if eq
+          assert_strict_equal x, y
+        else
+          assert_strict_equal x, y
+        end
+
+        unless u.nil?
+          y = XND.new vv, type: uuu
+          if eq
+            assert_strict_equal x, y
+          else
+            assert_strict_unequal x, y
+          end
+          check_copy_contiguous y
+        end
+      end
+    end
+  end
+end # class Union
+
 class TestRef < Minitest::Test
   def test_ref_empty
     DTYPE_EMPTY_TEST_CASES.each do |v, s|
@@ -1525,6 +1729,7 @@ class TestRef < Minitest::Test
         
         assert x.type == t
         assert x.value == vv
+        assert_equal_with_ex :size, x, vv
       end
     end
   end
@@ -1560,6 +1765,7 @@ class TestRef < Minitest::Test
           (0).upto(4) do |l|
             assert_equal x[i][j][k][l], inner[k][l]
             assert_equal x[i, j, k, l], inner[k][l]
+            check_copy_contiguous x[i, j, k , l]
           end
         end
       end
@@ -1785,6 +1991,11 @@ class TestConstr < Minitest::Test
     # simple tests
     x = XND.new [1,2,3,4], type: "A(4 * float32)"
 
+    assert_raises(NotImplementedError) { x < x }
+    assert_raises(NotImplementedError) { x <= x }
+    assert_raises(NotImplementedError) { x > x }
+    assert_raises(NotImplementedError) { x >= x }
+
     assert_strict_equal x, XND.new([1,2,3,4], type: "A(4 * float32)")
 
     assert_strict_unequal x, XND.new([1,2,3,4], type: "B(4 * float32)")
@@ -1806,7 +2017,6 @@ class TestConstr < Minitest::Test
         ttt = NDT.new tt
 
         x = XND.new vv, type: ttt
-
         y = XND.new vv, type: ttt
         assert_strict_equal x, y
 
@@ -2682,6 +2892,71 @@ class TestTypevar < Minitest::Test
 end # class TestTypevar
 
 class TestTypeInference < Minitest::Test
+  def test_data_shape_extraction
+    test_cases = [
+      [nil, [nil], []],
+      [1, [1], []],
+      [[1, 2], [[1, 2]], []],
+      [[], [], [[0]]],
+      [[nil], [nil], [[1]]],
+      [[1], [1], [[1]]],
+      [[[]], [[]], [[1]]],
+      [[[1, 2]], [[1, 2]], [[1]]],
+      [[[]], [], [[0], [1]]],
+      [[[nil]], [nil], [[1], [1]]],
+      [[[nil, 1]], [nil, 1], [[2], [1]]],
+      [[[1, nil]], [1, nil], [[2], [1]]],
+      [[nil, []], [], [[nil, 0], [2]]],
+      [[[], nil], [], [[0, nil], [2]]],
+      [[[nil], nil], [nil], [[1, nil], [2]]],
+      [[nil, [nil]], [nil], [[nil, 1], [2]]],
+      [[nil, [1]], [1], [[nil, 1], [2]]],
+      [[[1], nil], [1], [[1, nil], [2]]],
+      [[[], []], [], [[0, 0], [2]]],
+      [[[1], []], [1], [[1, 0], [2]]],
+      [[[], [1]], [1], [[0, 1], [2]]],
+      [[[1], [2]], [1, 2], [[1, 1], [2]]],
+      [[[2], [1]], [2, 1], [[1, 1], [2]]],
+      [[[1], [2, 3]], [1, 2, 3], [[1, 2], [2]]],
+      [[[1, 2], [3]], [1, 2, 3], [[2, 1], [2]]],
+      [[nil, [1], [2, 3]], [1, 2, 3], [[nil, 1, 2], [3]]],
+      [[[1], nil, [2, 3]], [1, 2, 3], [[1, nil, 2], [3]]],
+      [[[1], [2, 3], nil], [1, 2, 3], [[1, 2, nil], [3]]],
+      [[nil, [[1], []], [[2, 3]]], [1, 2, 3], [[1, 0, 2], [nil, 2, 1], [3]]],
+      [[[[1], []], nil, [[2, 3]]], [1, 2, 3], [[1, 0, 2], [ 2, nil, 1], [3]]],
+      [[[[1], []], [[2, 3]], nil], [1, 2, 3], [[1, 0, 2], [2, 1, nil], [3]]],
+    ]
+  
+    test_cases.each do |v, expected_data, expected_shapes|
+      data, shapes = XND::TypeInference.data_shapes(v)
+      assert_equal(data, expected_data)
+      assert_equal shapes, expected_shapes
+    end
+
+    v = [1]
+    127.times { v = [v] }
+    data, shapes = XND::TypeInference.data_shapes v
+    assert_equal data, [1]
+    assert_equal shapes, [[1]] * 128
+
+    # Exceptions
+    v = [1, []]
+    assert_raises(ValueError) { XND::TypeInference.data_shapes v }
+
+    v = [[], 1]
+    assert_raises(ValueError) { XND::TypeInference.data_shapes v }
+
+    v = [[[1, 2]], [3, 4]]
+    assert_raises(ValueError) { XND::TypeInference.data_shapes v }
+
+    v = [[1,2], [[3,4]]]
+    assert_raises(ValueError) { XND::TypeInference.data_shapes v }
+
+    v = [1]
+    127.times { v = [v] }
+    assert_raises(ValueError) { XND::TypeInference.data_shapes v }
+  end
+
   def test_accumulate
     arr = [1,2,3,4,5]
     result = [1,3,6,10,15]
@@ -2783,6 +3058,27 @@ class TestTypeInference < Minitest::Test
       assert_equal x.type, NDT.new(t)
       assert_equal x.value, v
     end
+
+    def test_bool
+      t = [true, nil, false]
+      typeof_t = "3 * ?bool"
+
+      test_cases = [
+        [[0], "1 * int64"],
+        [[0, 1], "2 * int64"],
+        [[[0], [1]], "2 * 1 * int64"],
+
+        [t, typeof_t],
+        [[t] * 2, "2 * %s" % typeof_t],
+        [[[t] * 2] * 10, "10 * 2 * %s" % typeof_t]
+      ]
+
+      test_cases.each do |v, t|
+        x = XND.new v
+        assert_equal x.type, NDT.new(t)
+        assert_equal x.value, x
+      end
+    end
   end
 
   def test_float64
@@ -2881,7 +3177,7 @@ class TestTypeInference < Minitest::Test
     [
       [["L1".b], "1 * bytes"],
       [["L2".b, "L3".b, "L4".b], "3 * bytes"],
-      [[["L5".b], ["none".b]], "2 * 1 * bytes"],
+      [[["L5".b], ["nil".b]], "2 * 1 * bytes"],
 
       [t, typeof_t],
       [[t] * 2, "2 * %s" % typeof_t],
@@ -3004,6 +3300,85 @@ class TestSplit < Minitest::Test
   end
 end # class TestSplit
 
+class TestTranspose < Minitest::Test
+  def test_api
+    x = XND.new []
+    y = x.transpose
+
+    assert_equal y, x
+
+    y = x.transpose(permute: [0])
+    assert_equal y, x
+    assert_raises(ValueError) { x.transpose(permute: []) }
+    assert_raises(ValueError) { x.transpose(permute: [0,0]) }
+    assert_raises(ValueError) { x.transpose(permute: [0,1]) }
+
+    x = XND.new [1,2,3]
+    y = x.transpose
+    assert_equal y, x
+
+    y = x.transpose
+    assert_equal y, x
+    assert_raises(ValueError) { x.transpose(permute: [-1]) }
+    assert_raises(ValueError) { x.transpose(permute: [2]) }
+    assert_raises(ValueError) { x.transpose(permute: [0,1]) }
+
+    x = XND.new [[1], [2,3]]
+    assert_raises(ValueError) { x.transpose }
+
+    x = XND.new [[1,2,3], [4,5,6]]
+    y = XND.new [[1,4], [2,5], [3,6]]
+    z = x.transpose
+    assert_equal z, y
+
+    z = x.transpose [0,1]
+    assert_equal z, x
+
+    z = x.transpose [1,0]
+    assert_equal z, y
+
+    assert_raises(ValueError) {x.transpose(permute: [1,1])}
+    assert_raises(ValueError) {x.transpose(permute: [10,1])}
+  end
+
+  def test_nd
+    lst = [
+      [
+        [0, 1, 3, 3],
+        [4, 5, 6, 7],
+        [8, 9, 10, 11]
+      ],
+      [
+        [12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]
+      ]
+    ]
+
+    x = XND.new lst
+    ans = [
+      x[0..-1, 0].value,
+      x[0..-1, 1].value,
+      x[0..-1, 2].value
+    ]
+    assert_equal x.transpose(permute:[1,0,2]), ans
+  end
+end
+
+class TestCopy < Minitest::Test
+  def test_copy_contiguous
+    x = XND.new [[1,2,3], [4,5,6]], dtype: "int8"
+    y = x.copy_contiguous
+    assert_equal x, y
+
+    y = x.copy_contiguous dtype: "int64"
+    assert_equal x, y
+
+    x = XND.new [1,2,2**62], dtype: "int64"
+    assert_raises()
+  end
+end
+
 class TestView < Minitest::Test
   def test_view_subscript
     
@@ -3012,5 +3387,5 @@ class TestView < Minitest::Test
   def test_view_new
     
   end
-end
+end # class TestView
 
