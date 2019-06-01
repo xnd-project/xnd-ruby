@@ -159,7 +159,7 @@ mblock_allocate(void)
 
 /* Create empty mblock with no data. */
 static VALUE
-mblock_empty(VALUE type)
+mblock_empty(VALUE type, uint32_t flags)
 {
   NDT_STATIC_CONTEXT(ctx);
   MemoryBlockObject *mblock_p;
@@ -171,7 +171,7 @@ mblock_empty(VALUE type)
   mblock_p = mblock_alloc();
   mblock_p->xnd = xnd_empty_from_type(
                                       rb_ndtypes_const_ndt(type),
-                                      XND_OWN_EMBEDDED, &ctx);
+                                      XND_OWN_EMBEDDED|flags, &ctx);
   if (mblock_p->xnd == NULL) {
     rb_raise(rb_eValueError, "cannot create mblock object from given type.");
   }
@@ -831,12 +831,12 @@ mblock_init(xnd_t * const x, VALUE data)
  * @param data - Data as a Ruby object.
  */
 static VALUE
-mblock_from_typed_value(VALUE type, VALUE data)
+mblock_from_typed_value(VALUE type, VALUE data, int32_t flags)
 {
   VALUE mblock;
   MemoryBlockObject *mblock_p;
 
-  mblock = mblock_empty(type);
+  mblock = mblock_empty(type, flags);
   GET_MBLOCK(mblock, mblock_p); 
   mblock_init(&mblock_p->xnd->master, data);
 
@@ -956,7 +956,7 @@ RubyXND_allocate(VALUE klass)
 
 /* Initialize a RubyXND object. */
 static VALUE
-RubyXND_initialize(VALUE self, VALUE type, VALUE data)
+RubyXND_initialize(VALUE self, VALUE type, VALUE data, VALUE device)
 {
   VALUE mblock;
   XndObject *xnd_p;
@@ -1955,7 +1955,7 @@ void Init_ruby_xnd(void)
   
   /* initializers */
   rb_define_alloc_func(cRubyXND, RubyXND_allocate);
-  rb_define_method(cRubyXND, "initialize", RubyXND_initialize, 2);
+  rb_define_method(cRubyXND, "initialize", RubyXND_initialize, 3);
   
   /* instance methods */
   rb_define_method(cXND, "type", XND_type, 0);

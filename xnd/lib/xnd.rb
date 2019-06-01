@@ -278,7 +278,7 @@ class XND < RubyXND
     end
   end
   
-  def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil, dtypedef: nil
+  def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil, dtypedef: nil, device: nil
     if [type, dtype, levels, typedef, dtypedef].count(nil) < 2
       raise ArgumentError, "the 'type', 'dtype', 'levels' and 'typedef' arguments are "
       "mutually exclusive."
@@ -307,7 +307,13 @@ class XND < RubyXND
       data = TypeInference.convert_xnd_t_to_ruby_array data
     end
 
-    super(type, data)
+    if device
+      name, no = device.split ":"
+      no = (no == "managed" ? -1 : no.to_i)
+      device = [name, no]
+    end
+
+    super(type, data, device)
   end
 
   alias :to_a :value

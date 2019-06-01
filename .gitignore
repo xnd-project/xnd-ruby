@@ -67,3 +67,4 @@ xnd/Gemfile.lock
 gumath/Gemfile.lock
 xnd/ext/ruby_xnd/lib/
 .vscode/
+xnd/ext/ruby_xnd/GPATH
