@@ -3,6 +3,7 @@ require 'xnd'
 
 require 'minitest/autorun'
 require 'minitest/hooks'
+require 'minitest/fail_fast'
 
 Minitest::Test.parallelize_me!
 

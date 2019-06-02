@@ -1110,6 +1110,25 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
 
     return array;
   }
+
+  case VarDimElem: {
+    int64_t start, step, shape;
+
+    shape = ndt_var_indices(&start, &step, t, x->index, &ctx);
+    if (shape < 0) {
+      seterr(&ctx);
+      raise_error();      
+    }
+
+    const int64_t i = adjust_index(t->VarDimElem.index, shape, &ctx);
+    if (i < 0) {
+      seterr(&ctx);
+      raise_error();      
+    }
+
+    const xnd_t next = xnd_var_dim_next(x, start, step, i);
+    return _XND_value(&next, maxshape);
+  }
     
   case Tuple: {
     VALUE tuple, v;
@@ -1169,6 +1188,27 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
     }
 
     return hash;
+  }
+
+  case Union: {
+    VALUE array, tag, v;
+
+    array = rb_ary_new2(2);
+    const uint8_t i = XND_UNION_TAG(x->ptr);
+    tag = rb_str_new2(t->Union.tags[i]);
+
+    rb_ary_store(array, 0, tag);
+
+    const xnd_t next = xnd_union_next(x, &ctx);
+    if (next.ptr == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+    v = _XND_value(&next, maxshape);
+
+    rb_ary_store(array, 1, v);
+
+    return array;
   }
 
   case Ref: {
@@ -1342,8 +1382,8 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
   }
 
   case String: {
-    const char *s = XND_POINTER_DATA(x->ptr);
-    size_t size = s ? strlen(s) : 0;
+    const char *s = XND_STRING_DATA(x->ptr);
+    size_t size = strlen(s);
 
     return rb_utf8_str_new(s, size);
   }
@@ -1438,7 +1478,9 @@ RubyXND_view_move_type(XndObject *src_p, xnd_t *x)
   XndObject *view_p;
   VALUE type, view;
 
-  type = rb_ndtypes_move_subtree(src_p->type, (ndt_t *)x->type);
+  type = rb_ndtypes_from_type(x->type);
+  ndt_decref(x->type);
+  
   view = XndObject_alloc();
   GET_XND(view, view_p);
 
@@ -1695,12 +1737,42 @@ _XND_size(const xnd_t *x)
     return safe_downcast(shape);
   }
 
+  case VarDimElem: {
+    NDT_STATIC_CONTEXT(ctx);
+    int64_t start, step, shape;
+
+    shape = ndt_var_indices(&start, &step, t, x->index, &ctx);
+    if (shape < 0) {
+      seterr(&ctx);
+      raise_error();
+    }
+
+    const int64_t i = adjust_index(t->VarDimElem.index, shape, &ctx);
+    if (i < 0) {
+      seterr(&ctx);
+      raise_error();
+    }
+
+    const xnd_t next = xnd_var_dim_next(x, start, step, i);
+    return _XND_size(&next);
+  }
+
   case Tuple: {
     return safe_downcast(t->Tuple.shape);
   }
 
   case Record: {
     return safe_downcast(t->Record.shape);
+  }
+
+  case Union: {
+    const xnd_t next = xnd_union_next(x, &ctx);
+    if (next.ptr == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+
+    return _XND_size(&next);
   }
 
   case Ref: {
