@@ -1308,14 +1308,14 @@ class TestRecord < Minitest::Test
       assert_equal x.value, v
       check_copy_contiguous x
 
-      v = {'x': -2.5+125j, 'y': nil, 'z': nil}
+      v = {'x' => -2.5+125i, 'y' => nil, 'z' => nil}
       x['x'] = v['x']
       x['y'] = v['y']
       x['z'] = v['z']
       assert_equal(x.value, v)
       check_copy_contiguous(x)
 
-      x = XND.new({'x': "abc", 'y': 100, 'z': 10.5})
+      x = XND.new({'x' => "abc", 'y' => 100, 'z' => 10.5})
       x[0][1] = 20000000
       assert_equal(x[0][1], 20000000)
       assert_equal(x[0, 1], 20000000)
@@ -1578,23 +1578,23 @@ class TestUnion < Minitest::Test
     y = x.copy_contiguous
     assert_strict_equal x, y
     
-    assert_strict_unequal(x, XND.new({'z' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "123"]})
-    assert_strict_unequal(x, XND.new({'a' => 2, 'b'=> 2.0, 'c' => "3", 'd' => "123"]})
-    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.1, 'c' => "3", 'd' => "123"]})
-    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "", 'd' => "123"]})
-    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "345", 'd' => "123"]})
-    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => ""]})
-    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "12345"]})
+    assert_strict_unequal(x, XND.new({'z' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 2, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.1, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "345", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => ""}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "12345"}))
 
     # Nested structures
-    t =  ""
+      t =  "
       {a: uint8,
       b: fixed_string(100, 'utf32'),
       c: {x: complex128,
             y: 2 * 3 * {v: [Int of int64 | Tuple of (bytes, string)],
                       u: bytes}},
       d: ref(string)}
-    ""
+    "
 
     v = {
       'a' => 10,
@@ -1612,6 +1612,7 @@ class TestUnion < Minitest::Test
             {'v' => ['Tuple', ["01234", "56789"]], 'u' => "ab"},
             {'v' => ['Tuple', ["", ""]], 'u' => "abc" }
           ]
+        ]
       },
       'd' => 'xyz'
     }

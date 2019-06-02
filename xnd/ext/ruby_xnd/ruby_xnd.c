@@ -960,7 +960,23 @@ device_flags(VALUE array)
   VALUE device, no;
 
   Check_Type(array, T_ARRAY);
-  /* FIXME: implement this. */
+  if (RARRAY_LEN(array) != 2) {
+    rb_raise(rb_eTypeError, "device argument must be of the form (device_name, device_no).");
+  }
+
+  device = rb_ary_entry(array, 0);
+  Check_Type(device, T_STRING);
+  if (RTEST(rb_funcall(device, rb_intern("=="), 1, rb_str_new_literal("cuda")))) {
+    rb_raise(rb_eValueError, "currently only 'cuda' is supported as a device name.");
+  }
+    
+  no = rb_ary_entry(array, 1);
+  Check_Type(no, T_FIXNUM);
+  if (FIX2NUM(no) != -1) {
+    rb_raise(rb_eValueError, "currently only 'cuda:managed' is supported as a device.");
+  }
+
+  return XND_CUDA_MANAGED;
 }
 
 /* Initialize a RubyXND object. */
