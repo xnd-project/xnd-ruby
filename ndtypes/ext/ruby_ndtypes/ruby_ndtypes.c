@@ -131,7 +131,8 @@ NdtObject_dfree(void * self)
 {
   NdtObject * ndt = (NdtObject*)self;
   
-  //  rb_ndtypes_gc_guard_unregister(ndt);
+  //rb_ndtypes_gc_guard_unregister(ndt);
+  printf("FREEING NDT: %ld.\n", NDT(ndt));
   ndt_decref(NDT(ndt));
   xfree(ndt);
 }
@@ -771,7 +772,7 @@ NDTypes_s_from_format(VALUE klass, VALUE format)
 
 /* Create NDT object from ndt_t type struct. */
 VALUE
-rb_ndtypes_from_type(ndt_t *type)
+rb_ndtypes_from_type(const ndt_t *type)
 {
   VALUE self;
   NdtObject *self_p;
@@ -779,6 +780,7 @@ rb_ndtypes_from_type(ndt_t *type)
   self = NdtObject_alloc();
   GET_NDT(self, self_p);
 
+  ndt_incref(type);
   NDT(self_p) = type;
 
   return self;
@@ -833,6 +835,10 @@ rb_ndtypes_const_ndt(VALUE ndt)
   }
 
   GET_NDT(ndt, ndt_p);
+  // Increase NDT reference because we are giving a reference to an already present
+  //   NDT object that is going to used in possibly a different place than where it was
+  //   first used.
+  //ndt_incref(ndt_p->ndt);
 
   return ndt_p->ndt;
 }
@@ -879,6 +885,13 @@ VALUE
 rb_ndtypes_set_error(ndt_context_t *ctx)
 {
   return seterr(ctx);
+}
+
+/* Fetch the const ndt_t within NdtObject and return. Does not increment reference.*/
+const ndt_t *
+rb_ndtypes_get_const_ndt_t(NdtObject *ndt)
+{
+  return NDT(ndt);
 }
 
 void Init_ruby_ndtypes(void)

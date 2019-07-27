@@ -136,6 +136,7 @@ extern "C" {
 #define NDT_ELLIPSIS       0x00000010U
 #define NDT_POINTER        0x00000020U
 #define NDT_REF            0x00000040U
+#define NDT_CHAR           0x00000080U
 
 
 /* Types: ndt_t */
@@ -222,6 +223,7 @@ enum ndt {
     EllipsisDim,
 
       /* Dtype */
+      Array,
       Tuple,
       Record,
       Union,
@@ -476,6 +478,11 @@ struct _ndt {
         struct {
             uint16_t target_align;
         } Bytes;
+
+        struct {
+            int64_t itemsize;
+            const ndt_t *type;
+        } Array;
 
         struct {
             enum ndt_encoding encoding;
@@ -848,6 +855,8 @@ NDTYPES_API const ndt_t *ndt_symbolic_dim_tag(char *name, const ndt_t *type, enu
 NDTYPES_API const ndt_t *ndt_ellipsis_dim(char *name, const ndt_t *type, ndt_context_t *ctx);
 NDTYPES_API const ndt_t *ndt_ellipsis_dim_tag(char *name, const ndt_t *type, enum ndt_contig tag, ndt_context_t *ctx);
 
+NDTYPES_API const ndt_t *ndt_array(const ndt_t *type, bool opt, ndt_context_t *ctx);
+
 /* Dtypes */
 NDTYPES_API const ndt_t *ndt_tuple(enum ndt_variadic flag, const ndt_field_t *fields, int64_t shape,
                              uint16_opt_t align, uint16_opt_t pack, bool opt, ndt_context_t *ctx);
@@ -976,6 +985,11 @@ typedef struct {
     int64_t size;
     uint8_t *data;
 } ndt_bytes_t;
+
+typedef struct {
+    int64_t shape;
+    char *data;
+} ndt_array_t;
 
 typedef int64_t ndt_categorical_t;
 

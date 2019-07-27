@@ -26,6 +26,7 @@ const ndt_t * rb_ndtypes_const_ndt(VALUE ndt);
 VALUE rb_ndtypes_from_object(VALUE type);
 VALUE rb_ndtypes_set_error(ndt_context_t *ctx);
 VALUE rb_ndtypes_from_type(const ndt_t *type);
+const ndt_t * rb_ndtypes_get_const_ndt_t(NdtObject *ndt);
 
 #define INT2BOOL(t) (t ? Qtrue : Qfalse)
 
