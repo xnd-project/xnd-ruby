@@ -163,13 +163,19 @@ class TestVarDim < Minitest::Test
 
     # too many dimensions.
     assert_raises(TypeError) { NDT.new("var * " * (MAX_DIM + 1) + "float64") }
+
+    # nested var is disallowed.
+    assert_raises(TypeError) { NDT.new("2 * {a: var * complex128}") }
+    assert_raises(TypeError) { NDT.new("var * {a: var * complex128}") }
+    assert_raises(TypeError) { NDT.new("var * ref(var * string)") }
+    assert_raises(TypeError) { NDT.new("var * SomeConstr(var * string)") }
   end
 
   def test_var_dim_external_offsets
     # Invalid offsets.
-    assert_raises(ValueError) { NDT.new( "int8", [""]) }
-    assert_raises(ValueError) { NDT.new( "int8", [0]) }
-    assert_raises(ValueError) { NDT.new( "int8", [0, 2]) }
+    assert_raises(TypeError) { NDT.new( "int8", [""]) }
+    assert_raises(TypeError) { NDT.new( "int8", [0]) }
+    assert_raises(TypeError) { NDT.new( "int8", [0, 2]) }
     assert_raises(TypeError) { NDT.new( "int8", {}) }
 
     assert_raises(ValueError) { NDT.new( "int8", []) }
@@ -189,6 +195,9 @@ class TestVarDim < Minitest::Test
     # Abstract dtype.
     assert_raises(ValueError) { NDT.new( "N * int8", [[0, 2], [0, 10, 20]]) }
     assert_raises(ValueError) { NDT.new( "var * int8", [[0, 2], [0, 10, 20]]) }
+
+    # Mixing external and internal offsets.
+    assert_raises(TypeError) { NDT.new( "var(offsets=[0,2,10]) * int8", [[0, 1], [0, 2]])}
   end
 end
 
@@ -1141,7 +1150,7 @@ class TestBufferProtocol < Minitest::Test
       ["(2,19)T{<b:a:xxxQ:b:}", 12, 4],
       ["(31,221)T{<b:a:xxxxxxxQ:b:}", 16, 8],
       ["(2,3,10)T{<b:a:xxxxxxxxxxxxxxxQ:b:xxxxxxxx}", 32, 16],
-      ["(2,10)T{=L:a:(2,3)Zd:b:}", 100, 1]
+      ["(2,10)T{=L:a:(2,3)D:b:}", 100, 1]
     ]
 
     test_error_cases = [
@@ -1259,7 +1268,7 @@ class TestBufferProtocol < Minitest::Test
     end
 
     # complex64
-    fmt = 'Zf'
+    fmt = 'F'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format f
@@ -1268,7 +1277,7 @@ class TestBufferProtocol < Minitest::Test
     end
 
     # complex128
-    fmt = 'Zd'
+    fmt = 'D'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format(f)
@@ -1278,54 +1287,51 @@ class TestBufferProtocol < Minitest::Test
   end
 end # class TestBufferProtocol
 
-# class TestApply < Minitest::Test
-#   def test_apply
-#     # Type checking and return type inference for function applications.
+class TestApply < Minitest::Test
+  def test_apply
+    # Type checking and return type inference for function applications.
 
-#     # Function type:
-#     sig = NDT.new "Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64"
-#     assert_serialize sig
+    # Function type:
+    sig = NDT.new "Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64"
+    assert_serialize sig
 
-#     # argument types:
-#     types = [NDT.new("20 * 2 * 3 * int64"), NDT.new("20 * 3 * 4 * int64")]
+    # argument types:
+    in_types = [NDT.new("20 * 2 * 3 * int64"), NDT.new("20 * 3 * 4 * int64")]
 
-#     spec = sig.apply(in_types)
+    spec = sig.apply(in_types)
 
-#     assert_equal spec.sig, sig
-#     assert_equal spec.nin, 2
-#     assert_equal spec.nout, 1
-#     assert_equal spec.nargs, 3
-#     assert_equal spec.types, types + [NDT.new("20 * 2 * 4 * float64")]
-#   end
+    assert_equal spec.sig, sig
+    assert_equal spec.in_types, in_types
+    assert_equal spec.out_types, [NDT.new("20 * 2 * 4 * float64")]
+    assert_equal spec.outer_dims, 1
+  end
 
-#   def test_apply_error
-#     sig = NDT.new("Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64")
-#     lst = [["20 * 2 * 3 * int8", "20 * 3 * 4 * int64"],
-#            ["10 * 2 * 3 * int64", "20 * 3 * 4 * int64"],
-#            ["20 * 2 * 100 * int64", "20 * 3 * 4 * int64"]]
+  def test_apply_error
+    sig = NDT.new("Dims... * N * M * int64, Dims... * M * P * int64 -> Dims... * N * P * float64")
+    lst = [["20 * 2 * 3 * int8", "20 * 3 * 4 * int64"],
+           ["10 * 2 * 3 * int64", "20 * 3 * 4 * int64"],
+           ["20 * 2 * 100 * int64", "20 * 3 * 4 * int64"]]
 
-#     lst.each do |l|
-#       in_types = l.map { |x| NDT.new(x) }
-#       assert_raises(TypeError) { sig.apply(in_types) }
-#     end
-#   end
-# end # class TestApply
+    lst.each do |l|
+      in_types = l.map { |x| NDT.new(x) }
+      assert_raises(TypeError) { sig.apply(in_types) }
+    end
+  end
+end # class TestApply
 
-# class TestBroadcast < Minitest::Test
-#   def test_broadcast
-#     BROADCAST_TEST_CASES.each do |d|
-#       sig, args, kwargs, expected = d.values
-#       spec = sig.apply(args, out: kwargs)
+class TestBroadcast < Minitest::Test
+  def test_broadcast
+    BROADCAST_TEST_CASES.each do |c|
+      spec = c.sig.apply(c.in_types)
 
-#       assert_equal(spec.flags, expected.flags)
-#       assert_equal(spec.outer_dims, expected.outer_dims)
-#       assert_equal(spec.nin, expected.nin)
-#       assert_equal(spec.nout, expected.nout)
-#       assert_equal(spec.nargs, expected.nargs)
-#       assert_equal(spec.types, expected.types)
-#     end
-#   end
-# end # class TestBroadcast
+      assert_equal spec.size, c.size
+
+      spec.zip(c).each do |v, u|
+        assert_equal v, u
+      end
+    end
+  end
+end # class TestBroadcast
 
 class LongFixedDimTests < Minitest::Test
   def test_steps_random
@@ -1339,7 +1345,8 @@ class LongFixedDimTests < Minitest::Test
           step = rand(-100...100)
           s = "fixed(shape=#{shape}, step=#{step}) * #{s}"
         end
-        
+
+        puts "s :: #{s}."
         t = NDT.new s
 
         assert_true verify_datasize(t)

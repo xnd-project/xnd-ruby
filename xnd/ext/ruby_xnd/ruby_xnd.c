@@ -108,7 +108,7 @@ MemoryBlockObject_dfree(void *self)
 {
   MemoryBlockObject *mblock = (MemoryBlockObject*)self;
 
-  printf("MEMBLOCK FREEING NDT: %ld.\n", mblock->xnd->master.type);
+  /* printf("MEMBLOCK FREEING NDT: %ld.\n", mblock->xnd->master.type); */
   xnd_del(mblock->xnd);
   mblock->xnd = NULL;
   xfree(mblock);
@@ -905,7 +905,7 @@ XndObject_dfree(void *self)
   MemoryBlockObject *mbp;
   GET_MBLOCK(xnd->mblock, mbp);
 
-  printf("FREEING XND: %ld.\n", mbp->xnd->master.type);
+  /* printf("FREEING XND: %ld.\n", mbp->xnd->master.type); */
   rb_xnd_gc_guard_unregister(xnd);
   xfree(xnd);
 }
@@ -936,7 +936,7 @@ XND_from_mblock(XndObject *xnd_p, VALUE mblock)
   GET_MBLOCK(mblock, mblock_p);
   
   xnd_p->mblock = mblock;
-  //  xnd_p->type = mblock_p->type;
+  xnd_p->type = mblock_p->type;
   /* xnd_p->type = rb_funcall(cNDTypes, */
   /*                          rb_intern("new"), */
   /*                          1, */
@@ -1008,7 +1008,7 @@ RubyXND_initialize(VALUE self, VALUE type, VALUE data, VALUE device)
   GET_XND(self, xnd_p);
 
   XND_from_mblock(xnd_p, mblock);
-  rb_xnd_gc_guard_register(xnd_p, mblock, type);
+  //  rb_xnd_gc_guard_register(xnd_p, mblock, type);
 
 #ifdef XND_DEBUG
   assert(XND(xnd_p)->type);
@@ -1497,7 +1497,7 @@ RubyXND_view_move_type(XndObject *src_p, xnd_t *x)
   view_p->type = type;
   view_p->xnd = *x;
 
-  rb_xnd_gc_guard_register(view_p, view_p->mblock, type);
+  //  rb_xnd_gc_guard_register(view_p, view_p->mblock, type);
 
   return view;
 }
@@ -1920,6 +1920,7 @@ RubyXND_s_empty(VALUE klass, VALUE origin_type, VALUE device)
   XndObject *self_p;
   MemoryBlockObject *mblock_p;
   VALUE self, mblock;
+  VALUE type;
   VALUE mblock_type, xnd_type;
   uint32_t flags = 0;
 
@@ -1930,27 +1931,27 @@ RubyXND_s_empty(VALUE klass, VALUE origin_type, VALUE device)
     flags = device_flags(device);
   }
 
-  printf("0 empty call...\n");
+  /* printf("0 empty call...\n"); */
     
-  mblock_type = rb_ndtypes_from_object(origin_type);
-  xnd_type = rb_ndtypes_from_object(origin_type);
-  
-  mblock = mblock_empty(mblock_type, flags);
+  type = rb_ndtypes_from_object(origin_type);
+  mblock = mblock_empty(type, flags);
 
-  const ndt_t * n = rb_ndtypes_const_ndt(xnd_type);
-  printf("EMPTY ALLOCATED: %ld.\n", n);
+  /* const ndt_t * n = rb_ndtypes_const_ndt(xnd_type); */
+  /* printf("EMPTY ALLOCATED: %ld.\n", n); */
 
-  const ndt_t * n1 = rb_ndtypes_const_ndt(mblock_type);
-  printf("EMPTY ALLOCATED 1: %ld.\n", n1);
+  /* const ndt_t * n1 = rb_ndtypes_const_ndt(mblock_type); */
+  /* printf("EMPTY ALLOCATED 1: %ld.\n", n1); */
 
-  printf("empty call...\n");
+  /* printf("empty call...\n"); */
   
   XND_from_mblock(self_p, mblock);
-  self_p->type=xnd_type;
+  //  self_p->type=type;
   GET_MBLOCK(mblock, mblock_p);
   
-  rb_xnd_gc_guard_register(self_p, mblock, xnd_type);
-  rb_xnd_gc_guard_register_mblock(mblock_p, mblock_type);
+  rb_xnd_gc_guard_register(self_p, mblock);
+  //  rb_xnd_gc_guard_register_mblock(mblock_p, mblock_type);
+  rb_xnd_gc_guard_register_mblock(mblock_p, type);
+  rb_xnd_gc_guard_register_type(self_p, type);
 
   return self;
 }
@@ -2011,7 +2012,7 @@ rb_xnd_from_xnd(xnd_t *x)
   GET_MBLOCK(mblock, mblock_p);
   
   XND_from_mblock(xnd_p, mblock);
-  rb_xnd_gc_guard_register(xnd_p, mblock, mblock_p->type);
+  //  rb_xnd_gc_guard_register(xnd_p, mblock, mblock_p->type);
 
   return xnd;
 }
@@ -2029,7 +2030,7 @@ rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags)
   xnd = XndObject_alloc();
 
   GET_XND(xnd, xnd_p);
-  rb_xnd_gc_guard_register(xnd_p, mblock, type);
+  //  rb_xnd_gc_guard_register(xnd_p, mblock, type);
 
   XND_from_mblock(xnd_p, mblock);
 

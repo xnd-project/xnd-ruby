@@ -72,17 +72,19 @@ class TestFixedDim < Minitest::Test
         [[[v] * 2] * 3, "3 * 2 * #{s}" ],
         [[[v] * 40] * 3 , "3 * 40 * #{s}" ]
       ].each do |vv, ss|
-        #        t = NDT.new ss
-        puts "type: #{ss}."
+#        t = NDT.new ss
+#        puts "type: #{ss}."
         x = XND.empty ss
-        puts "__GUARD__ :: #{RubyXND::GCGuard.instance_variable_get(:@__gc_guard_mblock).size}"
+        # puts "__GUARD__ :: #{RubyXND::GCGuard.instance_variable_get(:@__gc_guard_mblock).size}"
+        assert_equal x.to_s.class, String
         # assert_equal t, x.type
         # assert_equal vv, x.value
         # assert_equal vv.size, x.size
         # assert x.type.c_contiguous?
       end
     end
-
+      GC.start
+      # puts "finished."
     # assert_raises(ValueError) { XND.empty("?3 * int64") }
     # assert_raises(ValueError) { XND.empty("?2 * 3 * int64") }
     # assert_raises(ValueError) { XND.empty("2 * ?3 * int64") }
