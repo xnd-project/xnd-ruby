@@ -44,7 +44,6 @@ end
 
 def assert_strict_unequal x1, x2
   assert !x1.strict_equal(x2)
-  refute_equal x1, x2
 end
 
 def type_equal t, u

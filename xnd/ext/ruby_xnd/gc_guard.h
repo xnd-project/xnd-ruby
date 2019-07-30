@@ -5,11 +5,14 @@
 
 #include "ruby_xnd_internal.h"
 
-void rb_xnd_gc_guard_unregister(XndObject *);
-void rb_xnd_gc_guard_register(XndObject *, VALUE);
-void rb_xnd_gc_guard_register_mblock(MemoryBlockObject *mblock, VALUE type);
-void rb_xnd_gc_guard_unregsiter_mblock(MemoryBlockObject *mblock);
-void rb_xnd_gc_guard_register_type(XndObject *xnd, VALUE type);
+void rb_xnd_gc_guard_register_xnd_mblock(XndObject *, VALUE);
+void rb_xnd_gc_guard_register_xnd_type(XndObject *xnd, VALUE type);
+void rb_xnd_gc_guard_register_mblock_type(MemoryBlockObject *mblock, VALUE type);
+
+void rb_xnd_gc_guard_unregsiter_xnd_mblock(XndObject *mblock);
+void rb_xnd_gc_guard_unregsiter_xnd_type(XndObject *mblock);
+void rb_xnd_gc_guard_unregsiter_mblock_type(MemoryBlockObject *mblock);
+
 void rb_xnd_init_gc_guard(void);
 
 #endif  /* GC_GUARD_H */

@@ -96,10 +96,10 @@ class TestFixedDim < Minitest::Test
     assert_strict_equal x, XND.new([1,2,3,4])
 
     # compare int vs. float
-    x = XND.new([1,2,3], type: "int64")
-    y = XND.new([1,2,3], type: "float32")
-    assert_equal x, y
-    assert_strict_unequal x, y
+    x1 = XND.new([1,2,3], dtype: "int64")
+    y1 = XND.new([1,2,3], dtype: "float32")
+    assert_equal x1, y1
+    assert_strict_unequal x1, y1
     
     # different shape and/or data.
     assert_strict_unequal x, XND.new([1,2,3,5])
