@@ -1,55 +1,54 @@
 require_relative 'test_helper'
 
-# class TestModule < Minitest::Test
-#   def test_module
-#     test_cases = [
-#       "Foo:: 2 * 3 * ?int64",
-#       "Foo:: 10 * 2 * ?string",
-#       "Bar:: !10 * 2 * {a: !2 * ?int64}",
-#       "Quux:: {a: string, b: ?bytes}"
-#     ]
+class TestModule < Minitest::Test
+  def test_module
+    test_cases = [
+      "Foo:: 2 * 3 * ?int64",
+      "Foo:: 10 * 2 * ?string",
+      "Bar:: !10 * 2 * {a: !2 * ?int64}",
+      "Quux:: {a: string, b: ?bytes}"
+    ]
 
-#     test_cases.each do |s|
-#       assert_raises(ValueError) { XND.empty(s) }
-#     end
-#   end
-# end # class TestModule
+    test_cases.each do |s|
+      assert_raises(ValueError) { XND.empty(s) }
+    end
+  end
+end # class TestModule
 
-# class TestFunction < Minitest::Test
-#   def test_function
-#     test_cases = [
-#       "(2 * 3 * ?int64, complex128) -> (T, T)",
-#       "(2 * 3 * ?int64, {a: float64, b: bytes}) -> bytes",
-#     ]
+class TestFunction < Minitest::Test
+  def test_function
+    test_cases = [
+      "(2 * 3 * ?int64, complex128) -> (T, T)",
+      "(2 * 3 * ?int64, {a: float64, b: bytes}) -> bytes",
+    ]
 
-#     test_cases.each do |s|
-#       assert_raises(ValueError) { XND.empty(s) }
-#     end
-#   end
-# end # class TestFunction
+    test_cases.each do |s|
+      assert_raises(ValueError) { XND.empty(s) }
+    end
+  end
+end # class TestFunction
 
-# class TestVoid < Minitest::Test
-#   def test_void
-#     assert_raises(ValueError) { XND.empty("void") }
-#     assert_raises(ValueError) { XND.empty("10 * 2 * void") }
-#   end
-# end # class TestVoid
+class TestVoid < Minitest::Test
+  def test_void
+    assert_raises(ValueError) { XND.empty("void") }
+    assert_raises(ValueError) { XND.empty("10 * 2 * void") }
+  end
+end # class TestVoid
 
-# class TestAny < Minitest::Test
-#   def test_any
-#     test_cases = [
-#       "Any",
-#       "10 * 2 * Any",
-#       "10 * N * int64",
-#       "{a: string, b: Any}"
-#     ]
+class TestAny < Minitest::Test
+  def test_any
+    test_cases = [
+      "Any",
+      "10 * 2 * Any",
+      "10 * N * int64",
+      "{a: string, b: Any}"
+    ]
 
-#     test_cases.each do |s|
-#       assert_raises(ValueError) { XND.empty(s) }
-#     end
-#   end
-# end # class TestAn
-
+    test_cases.each do |s|
+      assert_raises(ValueError) { XND.empty(s) }
+    end
+  end
+end # class TestAny
 
 class TestFixedDim < Minitest::Test
   def test_fixed_dim_empty
@@ -216,425 +215,426 @@ class TestFixedDim < Minitest::Test
     end
   end
 
-  # def test_fixed_dim_indexing # subscript
-  #   # returns single number slice for 1D array/1 number
-  #   xnd = XND.new([1,2,3,4])
-  #   assert_equal xnd[1], XND.new(2)
+  def test_fixed_dim_indexing # subscript
+    # returns single number slice for 1D array/1 number
+    xnd = XND.new([1,2,3,4])
+    assert_equal xnd[1], XND.new(2)
     
-  #   # returns single number slice for 2D array and 2 indices
-  #   xnd = XND.new([[1,2,3], [4,5,6]])
-  #   assert_equal xnd[0,0], XND.new(1)
+    # returns single number slice for 2D array and 2 indices
+    xnd = XND.new([[1,2,3], [4,5,6]])
+    assert_equal xnd[0,0], XND.new(1)
     
-  #   # returns row for single index in 2D array
-  #   x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
-  #   assert_equal x[1], XND.new([4,5,6])
+    # returns row for single index in 2D array
+    x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
+    assert_equal x[1], XND.new([4,5,6])
 
-  #   # returns single column in 2D array
-  #   x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
-  #   assert_equal x[0..Float::INFINITY, 0], XND.new([1,4,7])
+    # returns single column in 2D array
+    x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
+    assert_equal x[0..Float::INFINITY, 0], XND.new([1,4,7])
 
-  #   # returns the entire array
-  #   x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
-  #   assert_equal(x[0..Float::INFINITY], x)
+    # returns the entire array
+    x = XND.new [[1,2,3], [4,5,6], [7,8,9]]
+    assert_equal(x[0..Float::INFINITY], x)
 
-  #   [
-  #     [
-  #       [
-  #         [11.12-2.3i, -1222+20e8i],
-  #         [Complex(Float::INFINITY, Float::INFINITY), -0.00002i],
-  #         [0.201+1i, -1+1e301i]
-  #       ], "3 * 2 * complex128"],
-  #     [
-  #       [
-  #         [11.12-2.3i, nil],
-  #         [Complex(Float::INFINITY, Float::INFINITY), nil],
-  #         [0.201+1i, -1+1e301i]
-  #       ], "3 * 2 * ?complex128"]
-  #   ].each do |v, s|
-  #     @arr = v
-  #     @t = NDT.new s
-  #     @x = XND.new v, type: @t
+    [
+      [
+        [
+          [11.12-2.3i, -1222+20e8i],
+          [
+            Complex(Float::INFINITY, Float::INFINITY), -0.00002i],
+          [0.201+1i, -1+1e301i]
+        ], "3 * 2 * complex128"],
+      [
+        [
+          [11.12-2.3i, nil],
+          [Complex(Float::INFINITY, Float::INFINITY), nil],
+          [0.201+1i, -1+1e301i]
+        ], "3 * 2 * ?complex128"]
+    ].each do |v, s|
+      @arr = v
+      @t = NDT.new s
+      @x = XND.new v, type: @t
 
-  #     assert_equal @x.to_a, @arr.to_a
+      assert_equal @x.to_a, @arr.to_a
       
-  #     0.upto(2) do |i|
-  #       assert_equal @x[i].to_a, @arr[i]
-  #     end
+      0.upto(2) do |i|
+        assert_equal @x[i].to_a, @arr[i]
+      end
 
-  #     3.times do |i|
-  #       2.times do |k|
-  #         assert @x[i][k].value == @arr[i][k]
-  #         assert @x[i, k].value == @arr[i][k]    
-  #       end
-  #     end
+      3.times do |i|
+        2.times do |k|
+          assert @x[i][k].value == @arr[i][k]
+          assert @x[i, k].value == @arr[i][k]    
+        end
+      end
 
-  #     assert_equal @x[INF].value, @arr
+      assert_equal @x[INF].value, @arr
       
-  #     ((-3...4).to_a + [Float::INFINITY]).each do |start|
-  #       ((-3...4).to_a + [Float::INFINITY]).each do |stop|
-  #         [true, false].each do |exclude_end|
-  #           # FIXME: add step count when ruby supports it.
-  #           arr_s = get_inf_or_normal_range start, stop, exclude_end
-  #           r = Range.new(start, stop, exclude_end)
-  #           assert_equal @x[r].value, @arr[arr_s]
-  #         end
-  #       end
-  #     end
-  #     assert_equal @x[INF, 0].value, @arr.transpose[0]
-  #     assert_equal @x[INF, 1].value, @arr.transpose[1]
-  #   end
-  # end
+      ((-3...4).to_a + [Float::INFINITY]).each do |start|
+        ((-3...4).to_a + [Float::INFINITY]).each do |stop|
+          [true, false].each do |exclude_end|
+            # FIXME: add step count when ruby supports it.
+            arr_s = get_inf_or_normal_range start, stop, exclude_end
+            r = Range.new(start, stop, exclude_end)
+            assert_equal @x[r].value, @arr[arr_s]
+          end
+        end
+      end
+      assert_equal @x[INF, 0].value, @arr.transpose[0]
+      assert_equal @x[INF, 1].value, @arr.transpose[1]
+    end
+  end
 
-  # def test_fixed_dim_assign
-  #   #### full data
-  #   x = XND.empty "2 * 4 * float64"
-  #   v = [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]
+  def test_fixed_dim_assign
+    #### full data
+    x = XND.empty "2 * 4 * float64"
+    v = [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]
 
-  #   # assigns full slice
-  #   x[INF] = v
-  #   assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-  #   # assigns subarray
-  #   x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-  #   x[0] = v[0] = [1.2, -3e45, Float::INFINITY, -322.25]
-  #   assert_equal x.value, v
+    x[0] = v[0] = [1.2, -3e45, Float::INFINITY, -322.25]
+    assert_equal x.value, v
 
-  #   x[1] = v[1] = [-11.25, 3.355e301, -0.000002, -5000.2]
-  #   assert_equal x.value, v
+    x[1] = v[1] = [-11.25, 3.355e301, -0.000002, -5000.2]
+    assert_equal x.value, v
 
-  #   # assigns single values
-  #   0.upto(1) do |i|
-  #     0.upto(3) do |j|
-  #       x[i][j] = v[i][j] = 3.22 * i + j
-  #     end
-  #   end
+    # assigns single values
+    0.upto(1) do |i|
+      0.upto(3) do |j|
+        x[i][j] = v[i][j] = 3.22 * i + j
+      end
+    end
 
-  #   assert_equal x.value, v
+    assert_equal x.value, v
 
-  #   # supports tuple indexing
-  #   0.upto(1) do |i|
-  #     0.upto(3) do |j|
-  #       x[i, j] = v[i][j] = -3.002e1 * i + j
-  #     end
-  #   end
+    # supports tuple indexing
+    0.upto(1) do |i|
+      0.upto(3) do |j|
+        x[i, j] = v[i][j] = -3.002e1 * i + j
+      end
+    end
 
-  #   assert_equal x.value, v
+    assert_equal x.value, v
 
-  #   ### optional data
-  #   x = XND.empty "2 * 4 * ?float64"
-  #   v = [[10.0, nil, 2.0, 100.12], [nil, nil, 6.0, 7.0]]     
+    ### optional data
+    x = XND.empty "2 * 4 * ?float64"
+    v = [[10.0, nil, 2.0, 100.12], [nil, nil, 6.0, 7.0]]     
 
-  #   # assigns full slice
-  #   x[INF] = v
-  #   assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-  #   # assigns subarray
-  #   x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-  #   x[0] = v[0] = [nil, 3e45, Float::INFINITY, nil]
-  #   assert_equal x.value, v
+    x[0] = v[0] = [nil, 3e45, Float::INFINITY, nil]
+    assert_equal x.value, v
 
-  #   x[1] = v[1] = [-11.25, 3.355e301, -0.000002, nil]
-  #   assert_equal x.value, v
+    x[1] = v[1] = [-11.25, 3.355e301, -0.000002, nil]
+    assert_equal x.value, v
 
-  #   # assigns single values
-  #   2.times do |i|
-  #     4.times do |j|
-  #       x[i][j] = v[i][j] = -325.99 * i + j
-  #     end
-  #   end
+    # assigns single values
+    2.times do |i|
+      4.times do |j|
+        x[i][j] = v[i][j] = -325.99 * i + j
+      end
+    end
 
-  #   assert_equal x.value, v
+    assert_equal x.value, v
 
-  #   # supports assignment by tuple indexing
-  #   2.times do |i|
-  #     4.times do |j|
-  #       x[i, j] = v[i][j] = -8.33e1 * i + j
-  #     end
-  #   end
+    # supports assignment by tuple indexing
+    2.times do |i|
+      4.times do |j|
+        x[i, j] = v[i][j] = -8.33e1 * i + j
+      end
+    end
 
-  #   assert_equal x.value, v
-  # end
+    assert_equal x.value, v
+  end
 end # class TestFixedDim
 
-# class TestFortran < Minitest::Test
-#   def test_fortran_empty
-#     DTYPE_EMPTY_TEST_CASES.each do |v, s|
-#       [
-#         [[v] * 0, "!0 * #{s}"],
-#         [[v] * 1, "!1 * #{s}"],
-#         [[v] * 2, "!2 * #{s}"],
-#         [[v] * 1000, "!1000 * #{s}"],
+class TestFortran < Minitest::Test
+  def test_fortran_empty
+    DTYPE_EMPTY_TEST_CASES.each do |v, s|
+      [
+        [[v] * 0, "!0 * #{s}"],
+        [[v] * 1, "!1 * #{s}"],
+        [[v] * 2, "!2 * #{s}"],
+        [[v] * 1000, "!1000 * #{s}"],
 
-#         [[[v] * 0] * 0, "!0 * 0 * #{s}"],
-#         [[[v] * 1] * 0, "!0 * 1 * #{s}"],
-#         [[[v] * 0] * 1, "!1 * 0 * #{s}"],
+        [[[v] * 0] * 0, "!0 * 0 * #{s}"],
+        [[[v] * 1] * 0, "!0 * 1 * #{s}"],
+        [[[v] * 0] * 1, "!1 * 0 * #{s}"],
 
-#         [[[v] * 1] * 1, "!1 * 1 * #{s}"],
-#         [[[v] * 2] * 1, "!1 * 2 * #{s}"],
-#         [[[v] * 1] * 2, "!2 * 1 * #{s}"],
-#         [[[v] * 2] * 2, "!2 * 2 * #{s}"],
-#         [[[v] * 3] * 2, "!2 * 3 * #{s}"],
-#         [[[v] * 2] * 3, "!3 * 2 * #{s}"],
-#         [[[v] * 40] * 3, "!3 * 40 * #{s}"]
-#       ].each do |vv, ss|
-#         t = NDT.new ss
-#         x = XND.empty ss
+        [[[v] * 1] * 1, "!1 * 1 * #{s}"],
+        [[[v] * 2] * 1, "!1 * 2 * #{s}"],
+        [[[v] * 1] * 2, "!2 * 1 * #{s}"],
+        [[[v] * 2] * 2, "!2 * 2 * #{s}"],
+        [[[v] * 3] * 2, "!2 * 3 * #{s}"],
+        [[[v] * 2] * 3, "!3 * 2 * #{s}"],
+        [[[v] * 40] * 3, "!3 * 40 * #{s}"]
+      ].each do |vv, ss|
+        t = NDT.new ss
+        x = XND.empty ss
 
-#         assert_equal t, x.type
-#         assert_equal vv, x.value
-#         assert_equal vv.size, x.size
-#         check_serialize x
-#         assert x.type.f_contiguous?
-#       end
-#     end
-#   end
+        assert_equal t, x.type
+        assert_equal vv, x.value
+        assert_equal vv.size, x.size
+        check_serialize x
+        assert x.type.f_contiguous?
+      end
+    end
+  end
 
-#   def test_fortran_slices
-#     [
-#       [[[11.12-2.3i, -1222+20e8i],
-#         [Complex(Float::INFINITY, Float::INFINITY), -0.00002i],
-#         [0.201+1i, -1+1e301i]], "!3 * 2 * complex128"],
-#       [[[11.12-2.3i, nil],
-#         [Complex(Float::INFINITY, Float::INFINITY), nil],
-#         [0.201+1i, -1+1e301i]], "!3 * 2 * ?complex128"]
-#     ].each do |v, s|
-#       arr = v
-#       t = NDT.new s
-#       x = XND.new v, type: t
+  def test_fortran_slices
+    [
+      [[[11.12-2.3i, -1222+20e8i],
+        [Complex(Float::INFINITY, Float::INFINITY), -0.00002i],
+        [0.201+1i, -1+1e301i]], "!3 * 2 * complex128"],
+      [[[11.12-2.3i, nil],
+        [Complex(Float::INFINITY, Float::INFINITY), nil],
+        [0.201+1i, -1+1e301i]], "!3 * 2 * ?complex128"]
+    ].each do |v, s|
+      arr = v
+      t = NDT.new s
+      x = XND.new v, type: t
 
-#       (0).upto(2) do |i|
-#         assert_equal x[i].value, arr[i]
-#       end
+      (0).upto(2) do |i|
+        assert_equal x[i].value, arr[i]
+      end
 
-#       (0).upto(2) do |i|
-#         (0).upto(1) do |k|
-#           assert x[i][k].value == arr[i][k]
-#           assert x[i, k].value == arr[i][k]
-#         end
-#       end
+      (0).upto(2) do |i|
+        (0).upto(1) do |k|
+          assert x[i][k].value == arr[i][k]
+          assert x[i, k].value == arr[i][k]
+        end
+      end
 
-#       # checks full slice
-#       assert_equal x[INF].to_a, arr
+      # checks full slice
+      assert_equal x[INF].to_a, arr
 
-#       # slice with ranges
-#       ((-3..-3).to_a + [Float::INFINITY]).each do |start|
-#         ((-3..-3).to_a + [Float::INFINITY]).each do |stop|
-#           [true, false].each do |exclude_end|
-#             # FIXME: add step count loop post Ruby 2.6
-#             arr_s = get_inf_or_normal_range start, stop, exclude_end
-#             r = Range.new start, stop, exclude_end
-#             assert_equal x[r].value, arr[arr_s]
-#             check_serialize(x[r])
-#             check_copy_contiguous(x[r])
-#           end
-#         end
-#       end
+      # slice with ranges
+      ((-3..-3).to_a + [Float::INFINITY]).each do |start|
+        ((-3..-3).to_a + [Float::INFINITY]).each do |stop|
+          [true, false].each do |exclude_end|
+            # FIXME: add step count loop post Ruby 2.6
+            arr_s = get_inf_or_normal_range start, stop, exclude_end
+            r = Range.new start, stop, exclude_end
+            assert_equal x[r].value, arr[arr_s]
+            check_serialize(x[r])
+            check_copy_contiguous(x[r])
+          end
+        end
+      end
 
-#       # checks column slices"
-#       assert_equal x[INF, 0].value, arr.transpose[0]
-#       assert_equal x[INF, 1].value, arr.transpose[1]
-#     end
-#   end
+      # checks column slices"
+      assert_equal x[INF, 0].value, arr.transpose[0]
+      assert_equal x[INF, 1].value, arr.transpose[1]
+    end
+  end
 
-#   def test_fortran_assign
-#     #### Full data
-#     x = XND.empty "!2 * 4 * float64"
-#     v = [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]
+  def test_fortran_assign
+    #### Full data
+    x = XND.empty "!2 * 4 * float64"
+    v = [[0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]]
 
-#     # assigns full slice
-#     x[INF] = v
-#     assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-#     # assigns subarray
-#     x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-#     x[0] = v[0] = [1.2, -3e45, Float::INFINITY, -322.25]
-#     assert_equal x.value, v
+    x[0] = v[0] = [1.2, -3e45, Float::INFINITY, -322.25]
+    assert_equal x.value, v
 
-#     x[1] = v[1] = [-11.25, 3.355e301, -0.000002, -5000.2]
-#     assert_equal x.value, v
+    x[1] = v[1] = [-11.25, 3.355e301, -0.000002, -5000.2]
+    assert_equal x.value, v
     
 
-#     # assigns single values
-#     0.upto(1) do |i|
-#       0.upto(3) do |j|
-#         x[i][j] = v[i][j] = 3.22 * i + j
-#       end
-#     end
+    # assigns single values
+    0.upto(1) do |i|
+      0.upto(3) do |j|
+        x[i][j] = v[i][j] = 3.22 * i + j
+      end
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
     
-#     # supports tuple indexing
-#     0.upto(1) do |i|
-#       0.upto(3) do |j|
-#         x[i, j] = v[i][j] = -3.002e1 * i + j
-#       end
-#     end
+    # supports tuple indexing
+    0.upto(1) do |i|
+      0.upto(3) do |j|
+        x[i, j] = v[i][j] = -3.002e1 * i + j
+      end
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
 
-#     ### Optional data
-#     x = XND.empty "!2 * 4 * ?float64"
-#     v = [[10.0, nil, 2.0, 100.12], [nil, nil, 6.0, 7.0]]     
+    ### Optional data
+    x = XND.empty "!2 * 4 * ?float64"
+    v = [[10.0, nil, 2.0, 100.12], [nil, nil, 6.0, 7.0]]     
 
-#     # assigns full slice
-#     x[INF] = v
-#     assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-#     # assigns subarray
-#     x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-#     x[0] = v[0] = [nil, 3e45, Float::INFINITY, nil]
-#     assert_equal x.value, v
+    x[0] = v[0] = [nil, 3e45, Float::INFINITY, nil]
+    assert_equal x.value, v
 
-#     x[1] = v[1] = [-11.25, 3.355e301, -0.000002, nil]
-#     assert_equal x.value, v
+    x[1] = v[1] = [-11.25, 3.355e301, -0.000002, nil]
+    assert_equal x.value, v
 
-#     # assigns single values
-#     2.times do |i|
-#       4.times do |j|
-#         x[i][j] = v[i][j] = -325.99 * i + j
-#       end
-#     end
+    # assigns single values
+    2.times do |i|
+      4.times do |j|
+        x[i][j] = v[i][j] = -325.99 * i + j
+      end
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
 
-#     # supports assignment by tuple indexing
-#     2.times do |i|
-#       4.times do |j|
-#         x[i, j] = v[i][j] = -8.33e1 * i + j
-#       end
-#     end
+    # supports assignment by tuple indexing
+    2.times do |i|
+      4.times do |j|
+        x[i, j] = v[i][j] = -8.33e1 * i + j
+      end
+    end
 
-#     assert_equal x.value, v
-#   end
+    assert_equal x.value, v
+  end
 
-#   def test_equality
-#     x = XND.new [1,2,3,4], type: "!4 * int64"
+  def test_equality
+    x = XND.new [1,2,3,4], type: "!4 * int64"
     
-#     # test basic case
-#     assert_strict_equal x, XND.new([1,2,3,4], type: "!4 * int64")
+    # test basic case
+    assert_strict_equal x, XND.new([1,2,3,4], type: "!4 * int64")
 
-#     # tests different shape and/or data
-#     assert_strict_unequal x, XND.new([1,2,3,100], type: "!4 * int64")
-#     assert_strict_unequal x, XND.new([1,2,3], type: "!3 * int64")
-#     assert_strict_unequal x, XND.new([1,2,3,4,5], type: "!5 * int64")
+    # tests different shape and/or data
+    assert_strict_unequal x, XND.new([1,2,3,100], type: "!4 * int64")
+    assert_strict_unequal x, XND.new([1,2,3], type: "!3 * int64")
+    assert_strict_unequal x, XND.new([1,2,3,4,5], type: "!5 * int64")
 
-#     # tests different shapes
-#     assert_strict_unequal x, XND.new([1,2,3], type: "!3 * int64")
-#     assert_strict_unequal x, XND.new([[1,2,3,4]], type: "!1 * 4 * int64")
-#     assert_strict_unequal x, XND.new([[1,2], [3,4]], type: "!2 * 2 * int64")
+    # tests different shapes
+    assert_strict_unequal x, XND.new([1,2,3], type: "!3 * int64")
+    assert_strict_unequal x, XND.new([[1,2,3,4]], type: "!1 * 4 * int64")
+    assert_strict_unequal x, XND.new([[1,2], [3,4]], type: "!2 * 2 * int64")
 
-#     # tests simple multidimensional arrays
-#     x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
-#     y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    # tests simple multidimensional arrays
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
 
-#     assert_strict_equal x, y
+    assert_strict_equal x, y
 
-#     # equality after assignment
-#     x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
-#     y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
-#     4.times do |i|
-#       3.times do |k|
-#         v = y[i, k]
-#         y[i, k] = 100
+    # equality after assignment
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    4.times do |i|
+      3.times do |k|
+        v = y[i, k]
+        y[i, k] = 100
 
-#         assert_strict_unequal x, y
-#         y[i, k] = v
-#       end
-#     end
+        assert_strict_unequal x, y
+        y[i, k] = v
+      end
+    end
 
-#     # tests slices
-#     x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
-#     y = XND.new([[1,2,3], [4,5,6]])
+    # tests slices
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    y = XND.new([[1,2,3], [4,5,6]])
 
-#     assert_strict_equal x[0..1], y
+    assert_strict_equal x[0..1], y
 
-#     y = XND.new([1,4,7,10], type: "!4 * int64")
+    y = XND.new([1,4,7,10], type: "!4 * int64")
 
-#     assert_strict_equal x[INF, 0], y
+    assert_strict_equal x[INF, 0], y
 
-#     EQUAL_TEST_CASES.each do |struct|
-#       v = struct.v
-#       t = struct.t
-#       u = struct.u
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
       
-#       [
-#         [[v] * 0, "!0 * #{t}", "!0 * #{u}"],
-#         [[[v] * 0] * 0, "!0 * 0 * #{t}", "!0 * 0 * #{u}"],
-#         [[[v] * 1] * 0, "!0 * 1 * #{t}", "!0 * 1 * #{u}"],
-#         [[[v] * 0] * 1, "!1 * 0 * #{t}", "!1 * 0 * #{u}"]
-#       ].each do |vv, tt, uu|
-#         ttt = NDT.new tt
+      [
+        [[v] * 0, "!0 * #{t}", "!0 * #{u}"],
+        [[[v] * 0] * 0, "!0 * 0 * #{t}", "!0 * 0 * #{u}"],
+        [[[v] * 1] * 0, "!0 * 1 * #{t}", "!0 * 1 * #{u}"],
+        [[[v] * 0] * 1, "!1 * 0 * #{t}", "!1 * 0 * #{u}"]
+      ].each do |vv, tt, uu|
+        ttt = NDT.new tt
 
-#         x = XND.new vv, type: ttt
-#         y = XND.new vv, type: ttt
-#         assert_strict_equal x, y
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
+        assert_strict_equal x, y
 
-#         unless u.nil?
-#           uuu = NDT.new uu
-#           y = XND.new vv, type: uuu
-#           assert_strict_equal x, y
-#         end
-#       end
-#     end
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          assert_strict_equal x, y
+        end
+      end
+    end
 
-#     EQUAL_TEST_CASES.each do |struct|
-#       v = struct.v
-#       t = struct.t
-#       u = struct.u
-#       w = struct.w
-#       eq = struct.eq
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
+      w = struct.w
+      eq = struct.eq
       
-#       [
-#         [[v] * 1, "!1 * #{t}", "!1 * #{u}", [0]],
-#         [[v] * 2, "!2 * #{t}", "!2 * #{u}", [1]],
-#         [[v] * 1000, "!1000 * #{t}", "!1000 * #{u}", [961]],
+      [
+        [[v] * 1, "!1 * #{t}", "!1 * #{u}", [0]],
+        [[v] * 2, "!2 * #{t}", "!2 * #{u}", [1]],
+        [[v] * 1000, "!1000 * #{t}", "!1000 * #{u}", [961]],
 
-#         [[[v] * 1] * 1, "!1 * 1 * #{t}", "!1 * 1 * #{u}", [0, 0]],
-#         [[[v] * 2] * 1, "!1 * 2 * #{t}", "!1 * 2 * #{u}", [0, 1]],
-#         [[[v] * 1] * 2, "!2 * 1 * #{t}", "!2 * 1 * #{u}", [1, 0]],
-#         [[[v] * 2] * 2, "!2 * 2 * #{t}", "!2 * 2 * #{u}", [1, 1]],
-#         [[[v] * 3] * 2, "!2 * 3 * #{t}", "!2 * 3 * #{u}", [1, 2]],
-#         [[[v] * 2] * 3, "!3 * 2 * #{t}", "!3 * 2 * #{u}", [2, 1]],
-#         [[[v] * 40] * 3, "!3 * 40 * #{t}", "!3 * 40 * #{u}", [1, 32]]
-#       ].each do |vv, tt, uu, indices|
-#         ttt = NDT.new tt
+        [[[v] * 1] * 1, "!1 * 1 * #{t}", "!1 * 1 * #{u}", [0, 0]],
+        [[[v] * 2] * 1, "!1 * 2 * #{t}", "!1 * 2 * #{u}", [0, 1]],
+        [[[v] * 1] * 2, "!2 * 1 * #{t}", "!2 * 1 * #{u}", [1, 0]],
+        [[[v] * 2] * 2, "!2 * 2 * #{t}", "!2 * 2 * #{u}", [1, 1]],
+        [[[v] * 3] * 2, "!2 * 3 * #{t}", "!2 * 3 * #{u}", [1, 2]],
+        [[[v] * 2] * 3, "!3 * 2 * #{t}", "!3 * 2 * #{u}", [2, 1]],
+        [[[v] * 40] * 3, "!3 * 40 * #{t}", "!3 * 40 * #{u}", [1, 32]]
+      ].each do |vv, tt, uu, indices|
+        ttt = NDT.new tt
 
-#         x = XND.new vv, type: ttt
-#         y = XND.new vv, type: ttt
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
 
-#         if eq
-#           assert_strict_equal x, y
-#         else
-#           assert_strict_unequal x, y
-#         end
+        if eq
+          assert_strict_equal x, y
+        else
+          assert_strict_unequal x, y
+        end
 
-#         unless u.nil?
-#           uuu = NDT.new uu
-#           y = XND.new vv, type: uuu
-#           if eq
-#             assert_strict_equal x, y
-#           else
-#             assert_strict_unequal x, y
-#           end
-#         end
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          if eq
+            assert_strict_equal x, y
+          else
+            assert_strict_unequal x, y
+          end
+        end
 
-#         unless w.nil?
-#           y = XND.new vv, type: ttt
-#           y[*indices] = w
-#           assert_strict_unequal x, y
+        unless w.nil?
+          y = XND.new vv, type: ttt
+          y[*indices] = w
+          assert_strict_unequal x, y
 
-#           y = XND.new vv, type: uuu
-#           y[*indices] = w
-#           assert_strict_unequal x, y
-#         end
-#       end
-#     end
-#   end
-# end # class TestFortran
+          y = XND.new vv, type: uuu
+          y[*indices] = w
+          assert_strict_unequal x, y
+        end
+      end
+    end
+  end
+end # class TestFortran
 
 # class TestVarDim < Minitest::Test
 #   def test_var_dim_empty
