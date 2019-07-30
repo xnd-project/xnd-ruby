@@ -72,154 +72,149 @@ class TestFixedDim < Minitest::Test
         [[[v] * 2] * 3, "3 * 2 * #{s}" ],
         [[[v] * 40] * 3 , "3 * 40 * #{s}" ]
       ].each do |vv, ss|
-#        t = NDT.new ss
-#        puts "type: #{ss}."
+        t = NDT.new ss
         x = XND.empty ss
-        # puts "__GUARD__ :: #{RubyXND::GCGuard.instance_variable_get(:@__gc_guard_mblock).size}"
-        assert_equal x.to_s.class, String
-        # assert_equal t, x.type
-        # assert_equal vv, x.value
-        # assert_equal vv.size, x.size
-        # assert x.type.c_contiguous?
+        assert_equal t, x.type
+        assert_equal vv, x.value
+        assert_equal vv.size, x.size
+        assert x.type.c_contiguous?
       end
     end
-      GC.start
-      # puts "finished."
-    # assert_raises(ValueError) { XND.empty("?3 * int64") }
-    # assert_raises(ValueError) { XND.empty("?2 * 3 * int64") }
-    # assert_raises(ValueError) { XND.empty("2 * ?3 * int64") }
-    # assert_raises(ValueError) { XND.empty("?2 * ?3 * int64") }
+    assert_raises(ValueError) { XND.empty("?3 * int64") }
+    assert_raises(ValueError) { XND.empty("?2 * 3 * int64") }
+    assert_raises(ValueError) { XND.empty("2 * ?3 * int64") }
+    assert_raises(ValueError) { XND.empty("?2 * ?3 * int64") }
   end
 
-  # def test_overflow
-  #   assert_raises(ValueError) { XND.empty "2147483648 * 2147483648 * 2 * uint8" }
-  # end
+  def test_overflow
+    assert_raises(ValueError) { XND.empty "2147483648 * 2147483648 * 2 * uint8" }
+  end
 
-  # def test_equality # richcompare
-  #   x = XND.new [1,2,3,4]
+  def test_equality # richcompare
+    x = XND.new [1,2,3,4]
 
-  #   assert_strict_equal x, XND.new([1,2,3,4])
+    assert_strict_equal x, XND.new([1,2,3,4])
 
-  #   # compare int vs. float
-  #   x = XND.new([1,2,3], type: "int64")
-  #   y = XND.new([1,2,3], type: "float32")
-  #   assert_equal x, y
-  #   assert_strict_unequal x, y
+    # compare int vs. float
+    x = XND.new([1,2,3], type: "int64")
+    y = XND.new([1,2,3], type: "float32")
+    assert_equal x, y
+    assert_strict_unequal x, y
     
-  #   # different shape and/or data.
-  #   assert_strict_unequal x, XND.new([1,2,3,5])
-  #   assert_strict_unequal x, XND.new([1,2,3,100])
-  #   assert_strict_unequal x, XND.new([4,2,3,4,5])
+    # different shape and/or data.
+    assert_strict_unequal x, XND.new([1,2,3,5])
+    assert_strict_unequal x, XND.new([1,2,3,100])
+    assert_strict_unequal x, XND.new([4,2,3,4,5])
 
-  #   # different shape.
-  #   assert_strict_unequal x, XND.new([1,2,3])
-  #   assert_strict_unequal x, XND.new([[1,2,3,4]])
-  #   assert_strict_unequal x, XND.new([[1,2], [3,4]])
+    # different shape.
+    assert_strict_unequal x, XND.new([1,2,3])
+    assert_strict_unequal x, XND.new([[1,2,3,4]])
+    assert_strict_unequal x, XND.new([[1,2], [3,4]])
 
-  #   # tests simple multidim array
-  #   x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
-  #   y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
+    # tests simple multidim array
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
+    y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
 
-  #   assert_strict_equal x, y
+    assert_strict_equal x, y
 
-  #   # C <-> Fortran.
-  #   x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
-  #   y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
+    # C <-> Fortran.
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
+    y = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]], type: "!4 * 3 * int64")
 
-  #   assert_strict_equal x, y
+    assert_strict_equal x, y
 
-  #   # slices
-  #   x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
-  #   y = XND.new([1,2,3])
-  #   assert_strict_equal x[0], y
+    # slices
+    x = XND.new([[1,2,3], [4,5,6], [7,8,9], [10,11,12]])
+    y = XND.new([1,2,3])
+    assert_strict_equal x[0], y
 
-  #   y = XND.new [1,4,7,10]
-  #   assert_strict_equal x[0..Float::INFINITY,0], y
+    y = XND.new [1,4,7,10]
+    assert_strict_equal x[0..Float::INFINITY,0], y
 
-  #   # test corner cases and many dtypes.
-  #   EQUAL_TEST_CASES.each do |struct|
-  #     v = struct.v
-  #     t = struct.t
-  #     u = struct.u
+    # test corner cases and many dtypes.
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
       
-  #     [
-  #       [[v] * 0, "0 * #{t}", "0 * #{u}"],
-  #       [[[v] * 0] * 0, "0 * 0 * #{t}", "0 * 0 * #{u}"],
-  #       [[[v] * 1] * 0, "0 * 1 * #{t}", "0 * 1 * #{u}"],
-  #       [[[v] * 0] * 1, "1 * 0 * #{t}", "1 * 0 * #{u}"]
-  #     ].each do |vv, tt, uu|
-  #       ttt = NDT.new tt
+      [
+        [[v] * 0, "0 * #{t}", "0 * #{u}"],
+        [[[v] * 0] * 0, "0 * 0 * #{t}", "0 * 0 * #{u}"],
+        [[[v] * 1] * 0, "0 * 1 * #{t}", "0 * 1 * #{u}"],
+        [[[v] * 0] * 1, "1 * 0 * #{t}", "1 * 0 * #{u}"]
+      ].each do |vv, tt, uu|
+        ttt = NDT.new tt
         
-  #       x = XND.new vv, type: ttt
-  #       y = XND.new vv, type: ttt
-  #       assert_strict_equal x, y
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
+        assert_strict_equal x, y
 
-  #       unless u.nil?
-  #         uuu = NDT.new uu          
-  #         y = XND.new vv, type: uuu
-  #         assert_strict_equal x, y
-  #       end
-  #     end
-  #   end # EQUAL_TEST_CASES.each
+        unless u.nil?
+          uuu = NDT.new uu          
+          y = XND.new vv, type: uuu
+          assert_strict_equal x, y
+        end
+      end
+    end # EQUAL_TEST_CASES.each
 
-  #   EQUAL_TEST_CASES.each do |struct|
-  #     v = struct.v
-  #     t = struct.t
-  #     u = struct.u
-  #     w = struct.w
-  #     eq = struct.eq
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
+      w = struct.w
+      eq = struct.eq
       
-  #     [
-  #       [[v] * 1, "1 * #{t}", "1 * #{u}", [0]],
-  #       [[v] * 2, "2 * #{t}", "2 * #{u}", [1]],
-  #       [[v] * 1000, "1000 * #{t}", "1000 * #{u}", [961]],
+      [
+        [[v] * 1, "1 * #{t}", "1 * #{u}", [0]],
+        [[v] * 2, "2 * #{t}", "2 * #{u}", [1]],
+        [[v] * 1000, "1000 * #{t}", "1000 * #{u}", [961]],
 
-  #       [[[v] * 1] * 1, "1 * 1 * #{t}", "1 * 1 * #{u}", [0, 0]],
-  #       [[[v] * 2] * 1, "1 * 2 * #{t}", "1 * 2 * #{u}", [0, 1]],
-  #       [[[v] * 1] * 2, "2 * 1 * #{t}", "2 * 1 * #{u}", [1, 0]],
-  #       [[[v] * 2] * 2, "2 * 2 * #{t}", "2 * 2 * #{u}", [1, 1]],
-  #       [[[v] * 3] * 2, "2 * 3 * #{t}", "2 * 3 * #{u}", [1, 2]],
-  #       [[[v] * 2] * 3, "3 * 2 * #{t}", "3 * 2 * #{u}", [2, 1]],
-  #       [[[v] * 40] * 3, "3 * 40 * #{t}", "3 * 40 * #{u}", [1, 32]]
-  #     ].each do |vv, tt, uu, indices|
-  #       ttt = NDT.new tt
+        [[[v] * 1] * 1, "1 * 1 * #{t}", "1 * 1 * #{u}", [0, 0]],
+        [[[v] * 2] * 1, "1 * 2 * #{t}", "1 * 2 * #{u}", [0, 1]],
+        [[[v] * 1] * 2, "2 * 1 * #{t}", "2 * 1 * #{u}", [1, 0]],
+        [[[v] * 2] * 2, "2 * 2 * #{t}", "2 * 2 * #{u}", [1, 1]],
+        [[[v] * 3] * 2, "2 * 3 * #{t}", "2 * 3 * #{u}", [1, 2]],
+        [[[v] * 2] * 3, "3 * 2 * #{t}", "3 * 2 * #{u}", [2, 1]],
+        [[[v] * 40] * 3, "3 * 40 * #{t}", "3 * 40 * #{u}", [1, 32]]
+      ].each do |vv, tt, uu, indices|
+        ttt = NDT.new tt
 
-  #       x = XND.new vv, type: ttt
-  #       y = XND.new vv, type: ttt
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
         
-  #       if eq
-  #         assert_strict_equal x, y
-  #       else
-  #         assert_strict_unequal x, y
-  #       end
+        if eq
+          assert_strict_equal x, y
+        else
+          assert_strict_unequal x, y
+        end
 
-  #       unless u.nil?
-  #         uuu = NDT.new uu
-  #         y = XND.new vv, type: uuu
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
 
-  #         if eq
-  #           assert_strict_equal x, y
-  #         else
-  #           assert_strict_unequal x, y                  
-  #         end
-  #       end              
+          if eq
+            assert_strict_equal x, y
+          else
+            assert_strict_unequal x, y                  
+          end
+        end              
         
-  #       unless w.nil?
-  #         y = XND.new vv, type: ttt
+        unless w.nil?
+          y = XND.new vv, type: ttt
 
-  #         y[*indices] = w
-  #         assert_strict_unequal x, y
+          y[*indices] = w
+          assert_strict_unequal x, y
 
-  #         unless u.nil?
-  #           uuu = NDT.new uu
-  #           y = XND.new vv, type: uuu
-  #           y[*indices] = w
-  #           assert_strict_unequal x, y
-  #         end
-  #       end
-  #     end
-  #   end
-  # end
+          unless u.nil?
+            uuu = NDT.new uu
+            y = XND.new vv, type: uuu
+            y[*indices] = w
+            assert_strict_unequal x, y
+          end
+        end
+      end
+    end
+  end
 
   # def test_fixed_dim_indexing # subscript
   #   # returns single number slice for 1D array/1 number

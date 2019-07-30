@@ -902,10 +902,7 @@ static void
 XndObject_dfree(void *self)
 {
   XndObject *xnd = (XndObject*)self;
-  MemoryBlockObject *mbp;
-  GET_MBLOCK(xnd->mblock, mbp);
 
-  /* printf("FREEING XND: %ld.\n", mbp->xnd->master.type); */
   rb_xnd_gc_guard_unregister(xnd);
   xfree(xnd);
 }
@@ -1937,10 +1934,10 @@ RubyXND_s_empty(VALUE klass, VALUE origin_type, VALUE device)
   mblock = mblock_empty(type, flags);
 
   /* const ndt_t * n = rb_ndtypes_const_ndt(xnd_type); */
-  /* printf("EMPTY ALLOCATED: %ld.\n", n); */
+  printf("EMPTY ALLOCATED 1.\n");
 
   /* const ndt_t * n1 = rb_ndtypes_const_ndt(mblock_type); */
-  /* printf("EMPTY ALLOCATED 1: %ld.\n", n1); */
+  printf("EMPTY ALLOCATED 2\n");
 
   /* printf("empty call...\n"); */
   

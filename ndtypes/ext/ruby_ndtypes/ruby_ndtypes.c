@@ -336,6 +336,57 @@ NDTYPES_BOOL_FUNC(ndt_is_complex)
 NDTYPES_BOOL_FUNC(ndt_is_c_contiguous)
 NDTYPES_BOOL_FUNC(ndt_is_f_contiguous)
 
+static int
+offsets_from_array(ndt_meta_t *m, VALUE array)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  VALUE temp;
+
+  Check_Type(array, T_ARRAY);
+
+  const int n = RARRAY_LEN(array);
+  if (n < 1 || n > NDT_MAX_DIM) {
+    rb_raise(rb_eValueError, "number of offsets arrays must be in [1, %d].", NDT_MAX_DIM);
+  }
+
+  m->ndims = 0;
+  for (int i = n-1; i >= 0; i--) {
+    temp = rb_ary_entry(array, i);
+    if (!RB_TYPE_P(temp, T_ARRAY)) {
+      rb_raise(rb_eValueError, "expected a list of offset lists.");
+    }
+
+    const int64_t noffsets = RARRAY_LEN(temp);
+    if (noffsets < 2 || noffsets > INT32_MAX) {
+      rb_raise(rb_eValueError, "length of a single offset list be in [2, INT32_MAX].");
+    }
+
+    int32_t * const offsets = ndt_alloc(noffsets, sizeof(int32_t));
+    if (offsets == NULL) {
+      rb_raise(rb_eNoMemError, "no memory to allocate offsets.");
+    }
+
+    for (int32_t k = 0; k < noffsets; k++) {
+      long long x = NUM2LL(rb_ary_entry(temp, k));
+
+      if (x < 0 || x > INT32_MAX) {
+        ndt_free(offsets);
+        rb_raise(rb_eValueError, "offset must be in [0, INT32_MAX].");        
+      }
+      offsets[k] = (int32_t)x;
+    }
+
+    m->offsets[m->ndims] = ndt_offsets_from_ptr(offsets, (int32_t)noffsets, &ctx);
+    if (m->offsets[m->ndims] == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+    m->ndims++;
+  }
+
+  return 0;
+}
+
 static VALUE
 array_from_int64(int64_t x[NDT_MAX_DIM], int ndim)
 {
@@ -357,7 +408,7 @@ NDTypes_from_object(VALUE self, VALUE type)
 {
   NDT_STATIC_CONTEXT(ctx);
   const char *cp;
-  NdtObject *ndt_p;
+  NdtObject *self_p;
 
   if (NDT_CHECK_TYPE(type)) {
     return rb_funcall(type, rb_intern("dup"), 0, NULL);
@@ -365,16 +416,12 @@ NDTypes_from_object(VALUE self, VALUE type)
 
   cp = StringValuePtr(type);
 
-  GET_NDT(self, ndt_p);
-  RBUF(ndt_p) = rbuf_allocate();
-  if (RBUF(ndt_p) == NULL) {
-    rb_raise(rb_eNoMemError, "problem in allocating RBUF object.");
-  }
+  GET_NDT(self, self_p);
   
-  rb_ndtypes_gc_guard_register(ndt_p, RBUF(ndt_p));
+  //  rb_ndtypes_gc_guard_register(ndt_p, RBUF(ndt_p));
 
-  NDT(ndt_p) = ndt_from_string_fill_meta(rbuf_ndt_meta(self), cp, &ctx);
-  if (NDT(ndt_p) == NULL) {
+  NDT(self_p) = ndt_from_string(cp, &ctx);
+  if (NDT(self_p) == NULL) {
     seterr(&ctx);
     raise_error();
   }
@@ -387,7 +434,8 @@ NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
 {
   NDT_STATIC_CONTEXT(ctx);
   NdtObject *self_p;
-  ResourceBufferObject *rbuf_p;
+  ndt_meta_t m = {.ndims = 0, .offsets = {NULL}};
+  /* ResourceBufferObject *rbuf_p; */
   const char *cp;
 
   Check_Type(type, T_STRING);
@@ -396,16 +444,20 @@ NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
   cp = StringValuePtr(type);
 
   GET_NDT(self, self_p);
-  RBUF(self_p) = rbuf_from_offset_lists(offsets);
-  GET_RBUF(RBUF(self_p), rbuf_p);
-  
-  NDT(self_p) = ndt_from_metadata_and_dtype(rbuf_p->m, cp, &ctx);
-  if(NDT(self_p) == NULL) {
-    seterr(&ctx);
+
+  if (offsets_from_array(&m, offsets) < 0) {
+    ndt_meta_clear(&m);
+    set_err(&ctx);
     raise_error();
   }
 
-  rb_ndtypes_gc_guard_register(self_p, RBUF(self_p));
+  NDT(self_p) = ndt_from_metadata_and_dtype(&m, cp, &ctx);
+  ndt_meta_clear(&m);
+
+  if (NDT(self_p) == NULL) {
+    set_err(&ctx);
+    raise_error();
+  }
 
   return self;
 }
