@@ -858,6 +858,11 @@ typedef struct XndObject {
 } XndObject;
 
 #define XND(xnd_p) (&(((XndObject *)xnd_p)->xnd))
+#define TYPE_OWNER(xnd_p) ((((XndObject *)xnd_p)->type))
+#define XND_TYPE(xnd_p) (((XndObject *)xnd_p)->xnd.type)
+#define XND_INDEX(xnd_p) (((XndObject *)xnd_p)->xnd.index)
+#define XND_PTR(xnd_p) (((XndObject *)xnd_p)->xnd.ptr)
+
 #define XND_CHECK_TYPE(xnd) (CLASS_OF(xnd) == cXND)
 #define GET_XND(obj, xnd_p) do {                        \
     TypedData_Get_Struct((obj), XndObject,              \
@@ -1912,6 +1917,53 @@ XND_short_value(VALUE self, VALUE maxshape)
   }
 }
 
+static VALUE
+XND_serialize(VALUE self)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  bool overflow = false;
+  const xnd_t *x;
+  const ndt_t* t;
+  VALUE result;
+  char *cp, *s;
+  int64_t tlen, size;
+  XndObject *self_p;
+
+  GET_XND(self, self_p);
+  x = XND(self_p);
+  t = XND_TYPE(self_p);
+
+  if (!ndt_is_pointer_free(t)) {
+    rb_raise(rb_eNotImpError, "serializing memory blocks with pointers is not implemented.");
+  }
+
+  if (ndt_is_optional(t) || ndt_subtree_is_optional(t)) {
+    rb_raise(rb_eNotImpError, "serializing bitmaps is not implemented.");
+  }
+
+  if (!ndt_is_c_contiguous(t) && !ndt_is_f_contiguous(t) &&
+      !ndt_is_var_contiguous(t)) {
+    rb_raise(rb_eNotImpError, "serializing non-contiguos memory blocks is not implemented.");
+  }
+
+  tlen = ndt_serialize(&s, t, &ctx);
+  if (tlen < 0) {
+    set_err(&ctx);
+    raise_error();
+  }
+
+  size = ADDi64(t->datasize, tlen, &overflow);
+  size = ADDi64(size, 8, &overflow);
+  if (overflow) {
+    ndt_free(s);
+    /* FIXME: maybe create a new OverflowError for this. */
+    rb_raise(rb_eTypeError, "too large to serialize.");
+  }
+
+  
+}
+  
+
 /*************************** Singleton methods ********************************/
 
 static VALUE
@@ -2085,6 +2137,9 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "[]", XND_array_aref, -1);
   rb_define_method(cXND, "[]=", XND_array_store, -1);
   rb_define_method(cXND, "==", XND_eqeq, 1);
+  rb_define_method(cXND, "serialize", XND_serialize, 0);
+
+  
   //  rb_define_method(cXND, "!=", XND_neq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);
   rb_define_method(cXND, "strict_equal", XND_strict_equal, 1);
