@@ -47,6 +47,8 @@ static VALUE rb_eValueError;
 
 VALUE mRubyXND_GCGuard;
 
+static VALUE seterr(ndt_context_t *ctx);
+
 /****************************************************************************/
 /*                               Error handling                             */
 /****************************************************************************/
@@ -1948,7 +1950,7 @@ XND_serialize(VALUE self)
 
   tlen = ndt_serialize(&s, t, &ctx);
   if (tlen < 0) {
-    set_err(&ctx);
+    seterr(&ctx);
     raise_error();
   }
 
@@ -1960,7 +1962,20 @@ XND_serialize(VALUE self)
     rb_raise(rb_eTypeError, "too large to serialize.");
   }
 
-  
+  result = rb_str_new(NULL, size);
+  cp = RSTRING_PTR(result);
+
+  char *ptr = x->ptr;
+  if (t->ndim != 0) {
+    ptr = x->ptr + x->index * t->Concrete.FixedDim.itemsize;
+  }
+
+  memcpy(cp, ptr, t->datasize); cp += t->datasize;
+  memcpy(cp, s, tlen); cp += tlen;
+  memcpy(cp, &t->datasize, 8);
+  ndt_free(s);
+
+  return result;
 }
   
 
