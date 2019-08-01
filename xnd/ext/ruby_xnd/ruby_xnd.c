@@ -942,10 +942,6 @@ XND_from_mblock(XndObject *xnd_p, VALUE mblock)
   
   xnd_p->mblock = mblock;
   xnd_p->type = mblock_p->type;
-  /* xnd_p->type = rb_funcall(cNDTypes, */
-  /*                          rb_intern("new"), */
-  /*                          1, */
-  /*                          rb_funcall(mblock_p->type, rb_intern("to_s"), 0, NULL)); */
   xnd_p->xnd = mblock_p->xnd->master;
 }
 
@@ -1924,6 +1920,47 @@ XND_short_value(VALUE self, VALUE maxshape)
 }
 
 static VALUE
+XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  XndObject *self_p;
+  NdtObject *dtype_p;
+  VALUE dtype;
+  VALUE dest;
+  const ndt_t *t;
+
+  if (argc == 1) {
+    dtype = argv[0];
+  }
+  else if (argc == 0) {
+    dtype = Qnil;
+  }
+  else {
+    rb_raise(rb_eArgError, "copy_contiguous can accept only one arg for dtype.");
+  }
+
+  GET_XND(self, self_p);
+
+  if (dtype != Qnil) {
+    if (!rb_ndtypes_check_type(dtype)) {
+      rb_raise(rb_eTypeError, "dtype must be of type ndtypes.");
+    }
+    t = ndt_copy_contiguous_dtype(XND_TYPE(self_p),
+                                  rb_ndtypes_get_ndt_object(dtype),
+                                  XND_INDEX(self_p), &ctx);
+  }
+  else {
+    t = ndt_copy_contiguous(XND_TYPE(self_p), XND_INDEX(self_p), &ctx);
+  }
+
+  if (t == NULL) {
+    seterr(&ctx);
+  }
+
+}
+
+/* Implement XND#deserialize */
+static VALUE
 XND_deserialize(VALUE self, VALUE v)
 {
   NDT_STATIC_CONTEXT(ctx);
@@ -2120,7 +2157,7 @@ rb_xnd_const_xnd(VALUE xnd)
 VALUE
 rb_xnd_from_xnd(xnd_t *x)
 {
-  VALUE mblock, xnd;
+  VALUE mblock, xnd, type;
   XndObject *xnd_p;
   MemoryBlockObject *mblock_p;
   
@@ -2128,9 +2165,13 @@ rb_xnd_from_xnd(xnd_t *x)
   xnd = XndObject_alloc();
   GET_XND(xnd, xnd_p);
   GET_MBLOCK(mblock, mblock_p);
+  type = mblock_p->type;
   
   XND_from_mblock(xnd_p, mblock);
-  //  rb_xnd_gc_guard_register(xnd_p, mblock, mblock_p->type);
+  
+  rb_xnd_gc_guard_register_xnd_mblock(xnd_p, mblock);
+  rb_xnd_gc_guard_register_xnd_type(xnd_p, type);
+  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
 
   return xnd;
 }
@@ -2148,9 +2189,12 @@ rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags)
   xnd = XndObject_alloc();
 
   GET_XND(xnd, xnd_p);
-  //  rb_xnd_gc_guard_register(xnd_p, mblock, type);
 
   XND_from_mblock(xnd_p, mblock);
+
+  rb_xnd_gc_guard_register_xnd_mblock(xnd_p, mblock);
+  rb_xnd_gc_guard_register_xnd_type(xnd_p, type);
+  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
 
   return xnd;
 }
@@ -2217,6 +2261,7 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "==", XND_eqeq, 1);
   rb_define_method(cXND, "serialize", XND_serialize, 0);
   rb_define_method(cXND, "deserialize", XND_deserialize, 1);
+  rb_define_method(cXND, "copy_contiguous", XND_copy_contiguous, -1);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);
