@@ -9,6 +9,16 @@ require 'minitest/hooks'
 
 MAX_DIM = NDT::MAX_DIM
 
+def have_none arr
+  if arr.is_a?(Array)
+    return arr.any? { |a| have_none(a) }
+  elsif arr.is_a?(Hash)
+    return arr.values.any? { |a| have_none(a.values) }
+  else
+    return arr.nil?
+  end
+end
+
 def assert_equal_with_ex func, x, y
   if x.value.nil? && y.nil?
     return

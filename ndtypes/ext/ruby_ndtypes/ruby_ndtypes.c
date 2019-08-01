@@ -219,7 +219,7 @@ rbuf_from_offset_lists(VALUE list)
 
 typedef struct NdtObject {
   VALUE rbuf;                  /* resource buffer */
-  ndt_t *ndt;                   /* type */
+  const ndt_t *ndt;                   /* type */
 } NdtObject;
 
 #define NDT(v) (((NdtObject *)v)->ndt)

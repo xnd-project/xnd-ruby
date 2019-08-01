@@ -1923,11 +1923,12 @@ static VALUE
 XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
 {
   NDT_STATIC_CONTEXT(ctx);
-  XndObject *self_p;
+  XndObject *self_p, *dest_p;
   NdtObject *dtype_p;
   VALUE dtype;
   VALUE dest;
   const ndt_t *t;
+  MemoryBlockObject *self_mblock_p;
 
   if (argc == 1) {
     dtype = argv[0];
@@ -1945,9 +1946,9 @@ XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
     if (!rb_ndtypes_check_type(dtype)) {
       rb_raise(rb_eTypeError, "dtype must be of type ndtypes.");
     }
-    /* t = ndt_copy_contiguous_dtype(XND_TYPE(self_p), */
-    /*                               rb_ndtypes_get_ndt_object(dtype), */
-    /*                               XND_INDEX(self_p), &ctx); */
+    t = ndt_copy_contiguous_dtype(XND_TYPE(self_p),
+                                  rb_ndtypes_const_ndt(dtype),
+                                  XND_INDEX(self_p), &ctx);
   }
   else {
     t = ndt_copy_contiguous(XND_TYPE(self_p), XND_INDEX(self_p), &ctx);
@@ -1957,6 +1958,18 @@ XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
     seterr(&ctx);
   }
 
+  dest = rb_xnd_empty_from_type(t, 0);
+  ndt_decref(t);
+
+  GET_XND(dest, dest_p);
+  GET_MBLOCK(self_p->mblock, self_mblock_p);
+
+  if (xnd_copy(XND(dest_p), XND(self_p), self_mblock_p->xnd->flags, &ctx) < 0) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  return dest;
 }
 
 static VALUE
