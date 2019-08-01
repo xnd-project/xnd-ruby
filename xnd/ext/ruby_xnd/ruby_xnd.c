@@ -1971,8 +1971,12 @@ XND_deserialize(VALUE self, VALUE v)
   memcpy(mblock_p->xnd->master.ptr, s, mblock_size);
   
   GET_XND(self, self_p);
+  XND_from_mblock(self_p, mblock);
+    
+  rb_xnd_gc_guard_register_xnd_mblock(self_p, mblock);
+  rb_xnd_gc_guard_register_xnd_type(self_p, type);
 
-  /* return XND_from_mblock(self_p, mblock); */
+  return self;
   
  invalid_format:
   rb_raise(rb_eValueError, "invalid format for xnd deserialization.");
