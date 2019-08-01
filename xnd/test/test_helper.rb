@@ -77,7 +77,7 @@ end
 def check_serialize x
   begin
     b = x.serialize
-    y = x.deserialize(b)
+    y = XND.deserialize(b)
   rescue NotImplementedError
     return
   end
