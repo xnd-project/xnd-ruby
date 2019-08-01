@@ -636,341 +636,341 @@ class TestFortran < Minitest::Test
   end
 end # class TestFortran
 
-# class TestVarDim < Minitest::Test
-#   def test_var_dim_empty
-#     DTYPE_EMPTY_TEST_CASES[0..10].each do |v, s|
-#       [
-#         [[v] * 0, "var(offsets=[0,0]) * #{s}"],
-#         [[v] * 1, "var(offsets=[0,1]) * #{s}"],
-#         [[v] * 2, "var(offsets=[0,2]) * #{s}"],
-#         [[v] * 1000, "var(offsets=[0,1000]) * #{s}"],
+class TestVarDim < Minitest::Test
+  def test_var_dim_empty
+    DTYPE_EMPTY_TEST_CASES[0..10].each do |v, s|
+      [
+        [[v] * 0, "var(offsets=[0,0]) * #{s}"],
+        [[v] * 1, "var(offsets=[0,1]) * #{s}"],
+        [[v] * 2, "var(offsets=[0,2]) * #{s}"],
+        [[v] * 1000, "var(offsets=[0,1000]) * #{s}"],
         
-#         [[[v] * 0] * 1, "var(offsets=[0,1]) * var(offsets=[0,0]) * #{s}"],
+        [[[v] * 0] * 1, "var(offsets=[0,1]) * var(offsets=[0,0]) * #{s}"],
         
-#         [[[v], []], "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{s}"],
-#         [[[], [v]], "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{s}"],
+        [[[v], []], "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{s}"],
+        [[[], [v]], "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{s}"],
         
-#         [[[v], [v]], "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{s}"],
-#         [[[v], [v] * 2, [v] * 5], "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{s}"]
-#       ].each do |vv, ss|
-#         t = NDT.new ss
-#         x = XND.empty ss
+        [[[v], [v]], "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{s}"],
+        [[[v], [v] * 2, [v] * 5], "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{s}"]
+      ].each do |vv, ss|
+        t = NDT.new ss
+        x = XND.empty ss
         
-#         assert_equal x.type, t
-#         assert_equal x.value, vv
-#         assert_equal x.size, vv.size
-#         check_copy_contiguous x
-#         check_serialize x
-#       end
-#     end
+        assert_equal x.type, t
+        assert_equal x.value, vv
+        assert_equal x.size, vv.size
+        check_copy_contiguous x
+        check_serialize x
+      end
+    end
 
-#     # returns empty view
-#     inner = [[0+0i] * 5] * 4
-#     x = XND.empty "2 * 3 * ref(4 * 5 * complex128)"
+    # returns empty view
+    inner = [[0+0i] * 5] * 4
+    x = XND.empty "2 * 3 * ref(4 * 5 * complex128)"
 
-#     y = x[1][2]
-#     assert_equal y.is_a?(XND), true
-#     assert_equal y.value, inner
+    y = x[1][2]
+    assert_equal y.is_a?(XND), true
+    assert_equal y.value, inner
 
-#     y = x[1, 2]
-#     assert_equal y.is_a?(XND), true
-#     assert_equal y.value, inner
+    y = x[1, 2]
+    assert_equal y.is_a?(XND), true
+    assert_equal y.value, inner
 
-#     # test errors with empty
-#     assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 3]) * int64") }
-#     assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * var(offsets=[0, 3, 10]) * int64") }
-#     assert_raises(NotImplementedError) { XND.empty("var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
-#     assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
-#   end
+    # test errors with empty
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 3]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
+  end
 
-#   def test_var_dim_assign
-#     ### regular data
-#     x = XND.empty "var(offsets=[0,2]) * var(offsets=[0,2,5]) * float64"
-#     v = [[0.0, 1.0], [2.0, 3.0, 4.0]]
+  def test_var_dim_assign
+    ### regular data
+    x = XND.empty "var(offsets=[0,2]) * var(offsets=[0,2,5]) * float64"
+    v = [[0.0, 1.0], [2.0, 3.0, 4.0]]
 
-#     # assigns full slice
-#     x[INF] = v
-#     assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-#     # assigns subarray
-#     x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-#     x[0] = v[0] = [1.2, 2.5]
-#     assert_equal x.value, v
+    x[0] = v[0] = [1.2, 2.5]
+    assert_equal x.value, v
 
-#     x[1] = v[1] = [1.2, 2.5, 3.99]
-#     assert_equal x.value, v
+    x[1] = v[1] = [1.2, 2.5, 3.99]
+    assert_equal x.value, v
 
-#     # assigns individual values
-#     2.times do |i|
-#       x[0][i] = v[0][i] = 100.0 * i
-#     end
+    # assigns individual values
+    2.times do |i|
+      x[0][i] = v[0][i] = 100.0 * i
+    end
 
-#     3.times do |i|
-#       x[1][i] = v[1][i] = 200.0 * i
-#     end
+    3.times do |i|
+      x[1][i] = v[1][i] = 200.0 * i
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
 
-#     # assigns tuple
-#     2.times do |i|
-#       x[0, i] = v[0][i] = 300.0 * i + 1.222
-#     end
+    # assigns tuple
+    2.times do |i|
+      x[0, i] = v[0][i] = 300.0 * i + 1.222
+    end
 
-#     3.times do |i|
-#       x[1, i] = v[1][i] = 400.0 * i + 1.333
-#     end
+    3.times do |i|
+      x[1, i] = v[1][i] = 400.0 * i + 1.333
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
 
-#     ### optional data
-#     x = XND.empty "var(offsets=[0,2]) * var(offsets=[0,2,5]) * ?float64"
-#     v = [[0.0, nil], [nil, 3.0, 4.0]]
+    ### optional data
+    x = XND.empty "var(offsets=[0,2]) * var(offsets=[0,2,5]) * ?float64"
+    v = [[0.0, nil], [nil, 3.0, 4.0]]
 
-#     # assigns full slice
-#     x[INF] = v
-#     assert_equal x.value, v
+    # assigns full slice
+    x[INF] = v
+    assert_equal x.value, v
 
-#     # assigns subarray
-#     x[INF] = v
+    # assigns subarray
+    x[INF] = v
     
-#     x[0] = v[0] = [nil, 2.0]
-#     assert_equal x.value, v
+    x[0] = v[0] = [nil, 2.0]
+    assert_equal x.value, v
 
-#     x[1] = v[1] = [1.22214, nil, 10.0]
-#     assert_equal x.value, v
+    x[1] = v[1] = [1.22214, nil, 10.0]
+    assert_equal x.value, v
 
-#     # assigns individual values
-#     2.times do |i|
-#       x[0][i] = v[0][i] = 3.14 * i + 1.2222
-#     end
+    # assigns individual values
+    2.times do |i|
+      x[0][i] = v[0][i] = 3.14 * i + 1.2222
+    end
 
-#     3.times do |i|
-#       x[1][i] = v[1][i] = 23.333 * i
-#     end
+    3.times do |i|
+      x[1][i] = v[1][i] = 23.333 * i
+    end
 
-#     assert_equal x.value, v
+    assert_equal x.value, v
 
-#     # assigns tuple
-#     2.times do |i|
-#       x[0, i] = v[0][i] = -122.5 * i + 1.222
-#     end
+    # assigns tuple
+    2.times do |i|
+      x[0, i] = v[0][i] = -122.5 * i + 1.222
+    end
 
-#     3.times do |i|
-#       x[1, i] = v[1][i] = -3e22 * i
-#     end
+    3.times do |i|
+      x[1, i] = v[1][i] = -3e22 * i
+    end
 
-#     assert_equal x.value, v
-#   end
+    assert_equal x.value, v
+  end
 
-#   def test_var_dim_overflow
-#     s = "var(offsets=[0, 2]) * var(offsets=[0, 1073741824, 2147483648]) * uint8"
-#     assert_raises(ValueError) { XND.empty(s) }
-#   end
+  def test_var_dim_overflow
+    s = "var(offsets=[0, 2]) * var(offsets=[0, 1073741824, 2147483648]) * uint8"
+    assert_raises(ValueError) { XND.empty(s) }
+  end
 
-#   def test_var_dim_match
-#     x = XND.new([Complex(0),Complex(1),Complex(2),Complex(3),Complex(4)],
-#                 type: "var(offsets=[0,5]) * complex128")
-#     sig = NDT.new("var... * complex128 -> var... * complex128")
+  def test_var_dim_match
+    x = XND.new([Complex(0),Complex(1),Complex(2),Complex(3),Complex(4)],
+                type: "var(offsets=[0,5]) * complex128")
+    sig = NDT.new("var... * complex128 -> var... * complex128")
 
-#     spec = sig.apply([x.type])
-#     assert type_equal(spec.out_types[0], x.type)
+    spec = sig.apply([x.type])
+    assert type_equal(spec.out_types[0], x.type)
 
-#     y = x[0..-1]
-#     spec = sig.apply(y.type)
-#     assert type_equal(sepc.types[1], x.type)
+    y = x[0..-1]
+    spec = sig.apply(y.type)
+    assert type_equal(sepc.types[1], x.type)
 
-#     # FIXME: port these tests from the python tests once stepped ranges are ready.
-#   end
+    # FIXME: port these tests from the python tests once stepped ranges are ready.
+  end
 
-#   def test_var_dim_equality
-#     x = XND.new [1,2,3,4], type: "var(offsets=[0,4]) * int64"
+  def test_var_dim_equality
+    x = XND.new [1,2,3,4], type: "var(offsets=[0,4]) * int64"
     
-#     # compares full array
-#     assert_strict_equal x, XND.new([1,2,3,4], type: "var(offsets=[0,4]) * int64")
+    # compares full array
+    assert_strict_equal x, XND.new([1,2,3,4], type: "var(offsets=[0,4]) * int64")
 
-#     # tests for different shape and/or data
-#     assert_strict_unequal x, XND.new([1,2,3,100], type: "var(offsets=[0,4]) * int64")
-#     assert_strict_unequal x, XND.new([1,2,3], type: "var(offsets=[0,3]) * int64")
-#     assert_strict_unequal x, XND.new([1,2,3,4,5], type: "var(offsets=[0,5]) * int64")
+    # tests for different shape and/or data
+    assert_strict_unequal x, XND.new([1,2,3,100], type: "var(offsets=[0,4]) * int64")
+    assert_strict_unequal x, XND.new([1,2,3], type: "var(offsets=[0,3]) * int64")
+    assert_strict_unequal x, XND.new([1,2,3,4,5], type: "var(offsets=[0,5]) * int64")
 
-#     # tests different shape
-#     assert_strict_unequal x, XND.new([1,2,3], type: "var(offsets=[0,3]) * int64")
-#     assert_strict_unequal x, XND.new([[1,2,3,4]],
-#                                      type: "var(offsets=[0,1]) * var(offsets=[0,4]) * int64")
-#     assert_strict_unequal x, XND.new(
-#                             [[1,2], [3,4]], type: "var(offsets=[0,2]) * var(offsets=[0,2,4]) * int64")
+    # tests different shape
+    assert_strict_unequal x, XND.new([1,2,3], type: "var(offsets=[0,3]) * int64")
+    assert_strict_unequal x, XND.new([[1,2,3,4]],
+                                     type: "var(offsets=[0,1]) * var(offsets=[0,4]) * int64")
+    assert_strict_unequal x, XND.new(
+                            [[1,2], [3,4]], type: "var(offsets=[0,2]) * var(offsets=[0,2,4]) * int64")
 
-#     # tests multidimensional arrays
-#     x = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
-#     y = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
+    # tests multidimensional arrays
+    x = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
+    y = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
     
-#     assert_strict_equal(x, y)
+    assert_strict_equal(x, y)
 
-#     # tests multidim arrays after assign
-#     x = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
-#     y = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
+    # tests multidim arrays after assign
+    x = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
+    y = XND.new([[1], [2,3,4,5], [6,7], [8,9,10]])
 
-#     (0..3).to_a.zip([1,4,2,3]).each do |i, shape|
-#       shape.times do |k|
-#         v = y[i, k]
-#         y[i, k] = 100
+    (0..3).to_a.zip([1,4,2,3]).each do |i, shape|
+      shape.times do |k|
+        v = y[i, k]
+        y[i, k] = 100
 
-#         assert_strict_unequal x, y
+        assert_strict_unequal x, y
         
-#         y[i, k] = v
-#       end
-#     end
+        y[i, k] = v
+      end
+    end
 
-#     # tests slices
-#     x = XND.new([[1], [4,5], [6,7,8], [9,10,11,12]])
+    # tests slices
+    x = XND.new([[1], [4,5], [6,7,8], [9,10,11,12]])
     
-#     y = XND.new([[1], [4,5]])
-#     z = x[0..2]
-#     assert_strict_equal x[0..1], y
-#     assert_false z.type.var_contiguous?
+    y = XND.new([[1], [4,5]])
+    z = x[0..2]
+    assert_strict_equal x[0..1], y
+    assert_false z.type.var_contiguous?
 
-#     y = XND.new([[4,5], [6,7,8]])
-#     z = x[0..-2]
-#     assert_strict_equal x[1..2], y
-#     assert_false z.type.var_contiguous?
+    y = XND.new([[4,5], [6,7,8]])
+    z = x[0..-2]
+    assert_strict_equal x[1..2], y
+    assert_false z.type.var_contiguous?
 
-#     # TODO: make this pass after Ruby 2.6 step-range
-#     # y = XND.new([[12,11,10,9], [5,4]])
-#     # assert_strict_equal x[(0..) % -2, (0..) % -1], y
-#     # assert_false z.type.var_contiguous?
+    # TODO: make this pass after Ruby 2.6 step-range
+    # y = XND.new([[12,11,10,9], [5,4]])
+    # assert_strict_equal x[(0..) % -2, (0..) % -1], y
+    # assert_false z.type.var_contiguous?
 
-#     EQUAL_TEST_CASES.each do |struct|
-#       v = struct.v
-#       t = struct.t
-#       u = struct.u
-#       [
-#         [[v] * 0, "var(offsets=[0,0]) * #{t}",
-#          "var(offsets=[0,0]) * #{u}"],
-#         [[[v] * 0] * 1, "var(offsets=[0,1]) * var(offsets=[0,0]) * #{t}",
-#          "var(offsets=[0,1]) * var(offsets=[0,0]) * #{u}"]
-#       ].each do |vv, tt, uu|
-#         ttt = NDT.new tt
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
+      [
+        [[v] * 0, "var(offsets=[0,0]) * #{t}",
+         "var(offsets=[0,0]) * #{u}"],
+        [[[v] * 0] * 1, "var(offsets=[0,1]) * var(offsets=[0,0]) * #{t}",
+         "var(offsets=[0,1]) * var(offsets=[0,0]) * #{u}"]
+      ].each do |vv, tt, uu|
+        ttt = NDT.new tt
 
-#         x = XND.new vv, type: ttt
-#         y = XND.new vv, type: ttt
-#         assert_strict_equal x, y
-#         check_copy_contiguous x
-#         check_serialize x
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
+        assert_strict_equal x, y
+        check_copy_contiguous x
+        check_serialize x
 
-#         unless u.nil? 
-#           uuu = NDT.new uu
-#           y = XND.new vv, type: uuu
-#           assert_strict_equal x, y
-#           check_copy_contiguous y
-#           check_serialize y
-#         end
-#       end
-#     end
+        unless u.nil? 
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          assert_strict_equal x, y
+          check_copy_contiguous y
+          check_serialize y
+        end
+      end
+    end
 
-#     EQUAL_TEST_CASES.each do |struct|
-#       v = struct.v
-#       t = struct.t
-#       u = struct.u
-#       w = struct.w
-#       eq = struct.eq
+    EQUAL_TEST_CASES.each do |struct|
+      v = struct.v
+      t = struct.t
+      u = struct.u
+      w = struct.w
+      eq = struct.eq
       
-#       [
-#         [[v] * 1, "var(offsets=[0,1]) * #{t}", "var(offsets=[0,1]) * #{u}", [0]],
-#         [[v] * 2, "var(offsets=[0,2]) * #{t}", "var(offsets=[0,2]) * #{u}", [1]],
-#         [[v] * 1000, "var(offsets=[0,1000]) * #{t}", "var(offsets=[0,1000]) * #{u}", [961]],
-#         [[[v], []], "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{t}",
-#          "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{u}", [0, 0]],
-#         [[[], [v]], "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{t}",
-#          "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{u}", [1, 0]],
-#         [[[v], [v]], "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{t}",
-#          "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{u}", [1, 0]],
-#         [[[v], [v] * 2, [v] * 5], "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{t}",
-#          "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{u}", [2, 3]]
-#       ].each do |vv, tt, uu, indices|
-#         ttt = NDT.new tt
+      [
+        [[v] * 1, "var(offsets=[0,1]) * #{t}", "var(offsets=[0,1]) * #{u}", [0]],
+        [[v] * 2, "var(offsets=[0,2]) * #{t}", "var(offsets=[0,2]) * #{u}", [1]],
+        [[v] * 1000, "var(offsets=[0,1000]) * #{t}", "var(offsets=[0,1000]) * #{u}", [961]],
+        [[[v], []], "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{t}",
+         "var(offsets=[0,2]) * var(offsets=[0,1,1]) * #{u}", [0, 0]],
+        [[[], [v]], "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{t}",
+         "var(offsets=[0,2]) * var(offsets=[0,0,1]) * #{u}", [1, 0]],
+        [[[v], [v]], "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{t}",
+         "var(offsets=[0,2]) * var(offsets=[0,1,2]) * #{u}", [1, 0]],
+        [[[v], [v] * 2, [v] * 5], "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{t}",
+         "var(offsets=[0,3]) * var(offsets=[0,1,3,8]) * #{u}", [2, 3]]
+      ].each do |vv, tt, uu, indices|
+        ttt = NDT.new tt
 
-#         x = XND.new vv, type: ttt
-#         y = XND.new vv, type: ttt
+        x = XND.new vv, type: ttt
+        y = XND.new vv, type: ttt
 
-#         if eq
-#           assert_strict_equal x, y
-#         else
-#           assert_strict_unequal x, y
-#         end
+        if eq
+          assert_strict_equal x, y
+        else
+          assert_strict_unequal x, y
+        end
 
-#         check_copy_contiguous x
+        check_copy_contiguous x
 
-#         unless u.nil?
-#           uuu = NDT.new uu
-#           y = XND.new vv, type: uuu
-#           if eq
-#             assert_strict_equal x, y
-#           else
-#             assert_strict_unequal x, y
-#           end
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          if eq
+            assert_strict_equal x, y
+          else
+            assert_strict_unequal x, y
+          end
 
-#           check_copy_contiguous y
-#         end
+          check_copy_contiguous y
+        end
 
-#         unless w.nil?
-#           y = XND.new vv, type: ttt
-#           y[*indices] = w
-#           assert_strict_unequal x, y
+        unless w.nil?
+          y = XND.new vv, type: ttt
+          y[*indices] = w
+          assert_strict_unequal x, y
 
-#           unless u.nil?
-#             uuu = NDT.new uu
-#             y = XND.new vv, type: uuu
-#             y[*indices] = w
-#             assert_strict_unequal x, y
-#           end
+          unless u.nil?
+            uuu = NDT.new uu
+            y = XND.new vv, type: uuu
+            y[*indices] = w
+            assert_strict_unequal x, y
+          end
 
-#           check_copy_contiguous y
-#         end
-#       end
-#     end
-#   end
+          check_copy_contiguous y
+        end
+      end
+    end
+  end
 
-#   def test_var_dim_nested
-#     t = "var(offsets=[0,2]) * var(offsets=[0,1,3]) * (var(offsets=[0,2]) * var(offsets=[0,3,7]) * float32, int64)"
-#     v = [
-#           [[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0, 6.0]], -1],
-#           [[[[7.0, 8.0, 9.0], [10.0, 11.0, 12.0, 13.0]], -2],
-#           [[14.0, 15.0, 16.0], [17.0, 18.0, 19.0, 20.0]], -3]
-#         ]
-#     x = XND.new v, type: t
+  def test_var_dim_nested
+    t = "var(offsets=[0,2]) * var(offsets=[0,1,3]) * (var(offsets=[0,2]) * var(offsets=[0,3,7]) * float32, int64)"
+    v = [
+          [[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0, 6.0]], -1],
+          [[[[7.0, 8.0, 9.0], [10.0, 11.0, 12.0, 13.0]], -2],
+          [[14.0, 15.0, 16.0], [17.0, 18.0, 19.0, 20.0]], -3]
+        ]
+    x = XND.new v, type: t
 
-#     assert_equal(x, v)
-#     assert_equal(x.value, v)
+    assert_equal(x, v)
+    assert_equal(x.value, v)
 
-#     assert_equal(x[0], v[0])
-#     assert_equal(x[1], v[1])
+    assert_equal(x[0], v[0])
+    assert_equal(x[1], v[1])
 
-#     assert_equal(x[0,0], v[0][0])
-#     assert_equal(x[1,0], v[1][0])
-#     assert_equal(x[1,1], v[1][1])
+    assert_equal(x[0,0], v[0][0])
+    assert_equal(x[1,0], v[1][0])
+    assert_equal(x[1,1], v[1][1])
 
-#     assert_equal(x[0,0,0], v[0][0][0])
-#     assert_equal(x[0,0,1], v[0][0][1])
+    assert_equal(x[0,0,0], v[0][0][0])
+    assert_equal(x[0,0,1], v[0][0][1])
 
-#     assert_equal(x[1,0,0], v[1][0][0])
-#     assert_equal(x[1,0,1], v[1][0][1])
+    assert_equal(x[1,0,0], v[1][0][0])
+    assert_equal(x[1,0,1], v[1][0][1])
 
-#     assert_equal(x[1,1,0], v[1][1][0])
-#     assert_equal(x[1,1,1], v[1][1][1])
+    assert_equal(x[1,1,0], v[1][1][0])
+    assert_equal(x[1,1,1], v[1][1][1])
 
-#     assert_equal(x[0,0,0,0], v[0][0][0][0])
-#     assert_equal(x[0,0,0,1], v[0][0][0][1])
+    assert_equal(x[0,0,0,0], v[0][0][0][0])
+    assert_equal(x[0,0,0,1], v[0][0][0][1])
 
-#     assert_equal(x[0,0,0,0], v[0][0][0][0])
-#     assert_equal(x[0,0,0,1], v[0][0][0][1])
+    assert_equal(x[0,0,0,0], v[0][0][0][0])
+    assert_equal(x[0,0,0,1], v[0][0][0][1])
 
-#     assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
-#     assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
+    assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
+    assert_equal(x[1,0,0,0,1], v[1][0][0][0][1])
 
-#     check_copy_contiguous(x)
-#   end
-# end # class TestVarDim
+    check_copy_contiguous(x)
+  end
+end # class TestVarDim
 
 # class TestSymbolicDim < Minitest::Test
 #   def test_symbolic_dim_raise
