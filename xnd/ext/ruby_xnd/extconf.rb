@@ -49,17 +49,21 @@ end
 binaries = File.expand_path(File.join(File.dirname(__FILE__) + "/lib/"))
 headers = File.expand_path(File.join(File.dirname(__FILE__) + "/include/"))
 
-find_library("xnd", nil, binaries)
-find_header("xnd.h", headers)
-
 FileUtils.copy_file(File.expand_path(File.join(File.dirname(__FILE__) + "/ruby_xnd.h")),
   "#{headers}/ruby_xnd.h")
+FileUtils.copy_file(File.expand_path(File.join(File.dirname(__FILE__) + "/xnd/libxnd/overflow.h")),
+  "#{headers}/overflow.h")
+
+find_library("xnd", nil, binaries)
+find_header("xnd.h", headers)
+find_header("overflow.h", headers)
 
 dir_config("xnd", [headers], [binaries])
 
 $INSTALLFILES = [
   ["ruby_xnd.h", "$(archdir)"],
-  ["xnd.h", "$(archdir)"]
+  ["xnd.h", "$(archdir)"],
+  ["overflow.h", "$(archdir)"]
 ]
 
 # for macOS

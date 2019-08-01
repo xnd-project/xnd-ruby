@@ -43,6 +43,7 @@ extern "C" {
 #include "ruby.h"
 #include "ndtypes.h"
 #include "xnd.h"
+#include "overflow.h"
 
   size_t rb_xnd_hash_size(VALUE hash);
   int rb_xnd_get_complex_values(VALUE comp, double *real, double *imag);
