@@ -844,7 +844,6 @@ mblock_from_typed_value(VALUE type, VALUE data, int32_t flags)
   mblock = mblock_empty(type, flags);
   GET_MBLOCK(mblock, mblock_p);
   mblock_init(&mblock_p->xnd->master, data);
-  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
 
   return mblock;
 }
@@ -1000,6 +999,7 @@ static VALUE
 RubyXND_initialize(VALUE self, VALUE type, VALUE data, VALUE device)
 {
   VALUE mblock;
+  MemoryBlockObject *mblock_p;
   XndObject *xnd_p;
   uint32_t flags = 0;
 
@@ -1011,9 +1011,13 @@ RubyXND_initialize(VALUE self, VALUE type, VALUE data, VALUE device)
   }
 
   mblock = mblock_from_typed_value(type, data, flags);
+  GET_MBLOCK(mblock, mblock_p);
+  
+  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
+    
   GET_XND(self, xnd_p);
-
   XND_from_mblock(xnd_p, mblock);
+  
   rb_xnd_gc_guard_register_xnd_mblock(xnd_p, mblock);
   rb_xnd_gc_guard_register_xnd_type(xnd_p, type);
 
@@ -1920,6 +1924,61 @@ XND_short_value(VALUE self, VALUE maxshape)
 }
 
 static VALUE
+XND_deserialize(VALUE self, VALUE v)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  VALUE mblock;
+  bool overflow = false;
+  int64_t mblock_size;
+  MemoryBlockObject *mblock_p;
+  XndObject *self_p;
+
+  Check_Type(v, T_STRING);
+
+  const int64_t size = RSTRING_LEN(v);
+  if (size < 8) {
+    goto invalid_format;
+  }
+
+  const char *s = RSTRING_PTR(v);
+  memcpy(&mblock_size, s+size-8, 8);
+  if (mblock_size < 0) {
+    goto invalid_format;
+  }
+
+  const int64_t tmp = ADDi64(mblock_size, 8, &overflow);
+  const int64_t tlen = size - tmp;
+  if (overflow || tlen < 0) {
+    goto invalid_format;
+  }
+
+  const ndt_t *t = ndt_deserialize(s+mblock_size, tlen, &ctx);
+  if (t == NULL) {
+    seterr(&ctx);
+  }
+
+  if (t->datasize != mblock_size) {
+    goto invalid_format;
+  }
+
+  VALUE type = rb_ndtypes_from_type(t);
+  ndt_decref(t);
+
+  mblock = mblock_empty(type, XND_OWN_EMBEDDED);
+  GET_MBLOCK(mblock, mblock_p);
+  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
+  
+  memcpy(mblock_p->xnd->master.ptr, s, mblock_size);
+  
+  GET_XND(self, self_p);
+
+  /* return XND_from_mblock(self_p, mblock); */
+  
+ invalid_format:
+  rb_raise(rb_eValueError, "invalid format for xnd deserialization.");
+}
+
+static VALUE
 XND_serialize(VALUE self)
 {
   NDT_STATIC_CONTEXT(ctx);
@@ -2153,7 +2212,7 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "[]=", XND_array_store, -1);
   rb_define_method(cXND, "==", XND_eqeq, 1);
   rb_define_method(cXND, "serialize", XND_serialize, 0);
-
+  rb_define_method(cXND, "deserialize", XND_deserialize, 1);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);
