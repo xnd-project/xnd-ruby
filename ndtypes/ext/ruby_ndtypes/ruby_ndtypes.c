@@ -787,68 +787,67 @@ NDTypes_strides(VALUE self)
   return array_from_int64(x.strides, x.ndim);  
 }
 
+static int
+parse_apply_args(const ndt_t* types[NDT_MAX_ARGS], int *num_intypes, int *num_outtypes,
+                 int *num_args, VALUE input_types) {
+  size_t nin, nout;
+  if (RARRAY_LEN(input_types) == 0) {
+    rb_raise(rb_eArgError, "must specify more than 0 input types.");
+  }
+
+  nin  = RARRAY_LEN(input_types);
+  if (nin > NDT_MAX_ARGS) {
+    rb_raise(rb_eArgError, "maximum number of arguments cannot exceed %d, got %d.",
+             NDT_MAX_ARGS, nin);
+  }
+
+  for (int i = 0; i < nin; ++i) {
+    VALUE v = rb_ary_entry(input_types, i);
+    NdtObject *v_p;
+    
+    if (!NDT_CHECK_TYPE(v)) {
+      rb_raise(rb_eArgError, "every argument must be of type NDT.");
+    }
+
+    GET_NDT(v, v_p);
+    types[i] = NDT(v_p);
+  }
+
+  /* FIXME: since no use case exists, we don't factor specifying out types in the key word args. */
+  nout = 0;
+  for (int i = 0; i < nin+nout; ++i) {
+    ndt_incref(types[i]);
+  }
+
+  *num_intypes = (int)nin;
+  *num_outtypes = (int)nout;
+  *num_args = (int)nin + (int)nout;
+
+  return 0;
+
+}
+
 static VALUE
-NDTypes_apply(VALUE self, VALUE types)
+NDTypes_apply(VALUE self, VALUE input_types)
 {
   NDT_STATIC_CONTEXT(ctx);
-  NdtObject *self_p, *x_p;
-  ndt_t *sig;
-  const ndt_t *in[NDT_MAX_ARGS];
-  ndt_apply_spec_t spec;
-  VALUE flags, out, broadcast, outer_dims;
-  size_t nin;
-  int i;
+  const ndt_t *types[NDT_MAX_ARGS] = {NULL};
+  const int64_t li[NDT_MAX_ARGS] = {0};
+  ndt_apply_spec_t spec = ndt_apply_spec_empty;
+  VALUE res, flags, outer_dims, nin, nout, nargs, lst;
+  int ret;
+  int num_intypes, num_outtypes, num_args;
+  NdtObject *self_p;
 
-  Check_Type(types, T_ARRAY);
+  Check_Type(input_types, T_ARRAY);
+
+  parse_apply_args(types, &num_intypes, &num_outtypes, &num_args, input_types);
 
   GET_NDT(self, self_p);
-  sig = NDT(self_p);
-
-  nin = RARRAY_LEN(types);
-  if (nin > NDT_MAX_ARGS) {
-    rb_raise(rb_eArgError, "maximum number of arguments is %d", NDT_MAX_ARGS);
-  }
-
-  for (i = 0; i < nin; ++i) {
-    VALUE temp = rb_ary_entry(types, i);
-    if (!NDT_CHECK_TYPE(temp)) {
-      rb_raise(rb_eTypeError, "argument types must be NDT.");
-    }
-    in[i] = rb_ndtypes_const_ndt(temp);
-  }
-
-  spec = ndt_apply_spec_empty;
-  /* FIXME: should be made better. */
-  /* if (ndt_typecheck(&spec, sig, in, (int)nin, NULL, NULL, &ctx) < 0) { */
-  /*   seterr(&ctx); */
-  /*   raise_error(); */
-  /* } */
-
-  flags = rb_str_new2(ndt_apply_flags_as_string(&spec));
-  out = rb_ary_new2(spec.nout);
-
-  /* for (i = spec.nout - 1; i >= 0 ; i--) { */
-  /*   VALUE x = NdtObject_alloc(); */
-  /*   GET_NDT(x, x_p); */
-  /*   NDT(x_p) = spec.out[i]; */
-  /*   spec.out[i]= NULL; spec.nout--; */
-  /*   rb_ary_store(out, i, x); */
-  /* } */
-
-  /* broadcast = rb_ary_new2(spec.nbroadcast); */
-
-  /* for (i = spec.nbroadcast-1; i >= 0; i--) { */
-  /*   VALUE x = NdtObject_alloc(); */
-  /*   GET_NDT(x, x_p); */
-  /*   NDT(x_p) = spec.broadcast[i]; */
-  /*   spec.broadcast[i] = NULL; spec.nbroadcast--; */
-  /*   rb_ary_store(broadcast, i, x); */
-  /* } */
-
-  /* outer_dims = LL2NUM(spec.outer_dims); */
-
-  return rb_funcall(rb_const_get(cNDTypes, rb_intern("ApplySpec")), rb_intern("new"),
-                    6, flags, self, types, out, broadcast, outer_dims);
+  const ndt_t * sig = NDT(self_p);
+  ret = ndt_typecheck(&spec, sig, types, li, num_intypes, num_outtypes, false,
+                      NULL, NULL, &ctx);
+  
 }
 
 /****************************************************************************/

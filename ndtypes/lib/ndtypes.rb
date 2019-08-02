@@ -7,8 +7,7 @@ rescue LoadError
 end
 
 class NDTypes
-  Struct.new("ApplySpec", :flags, :sig, :in_types,
-             :out_types, :in_broadcast, :outer_dims)
+  Struct.new("ApplySpec", :flags, :outer_dims, :nin, :nout, :nargs, :types)
   ApplySpec = Struct::ApplySpec
   
   # It so happens that over riding the .new method in a super class also
