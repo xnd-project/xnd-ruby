@@ -13,7 +13,7 @@ def have_none arr
   if arr.is_a?(Array)
     return arr.any? { |a| have_none(a) }
   elsif arr.is_a?(Hash)
-    return arr.values.any? { |a| have_none(a.values) }
+    return arr.values.any? { |a| have_none(a) }
   else
     return arr.nil?
   end

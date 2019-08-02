@@ -769,16 +769,15 @@ class TestVarDim < Minitest::Test
   end
 
   def test_var_dim_match
-    x = XND.new([Complex(0),Complex(1),Complex(2),Complex(3),Complex(4)],
-                type: "var(offsets=[0,5]) * complex128")
+    x = XND.new([0,1,2,3,4], type: "var(offsets=[0,5]) * complex128")
     sig = NDT.new("var... * complex128 -> var... * complex128")
-
+    
     spec = sig.apply([x.type])
-    assert type_equal(spec.out_types[0], x.type)
+    assert type_equal(spec.types[1], x.type)
 
     y = x[0..-1]
-    spec = sig.apply(y.type)
-    assert type_equal(sepc.types[1], x.type)
+    spec = sig.apply([y.type])
+    assert type_equal(spec.types[1], x.type)
 
     # FIXME: port these tests from the python tests once stepped ranges are ready.
   end

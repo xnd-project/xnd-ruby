@@ -1333,7 +1333,7 @@ class TestApply < Minitest::Test
     assert_equal spec.nin, 2
     assert_equal spec.nout, 1
     assert_equal spec.nargs, 3
-    assert_equal spec.types, [NDT.new("20 * 2 * 4 * float64")]
+    assert_equal spec.types, in_types + [NDT.new("20 * 2 * 4 * float64")]
   end
 
   def test_apply_error

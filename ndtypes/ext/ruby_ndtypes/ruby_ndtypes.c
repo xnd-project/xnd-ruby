@@ -847,7 +847,31 @@ NDTypes_apply(VALUE self, VALUE input_types)
   const ndt_t * sig = NDT(self_p);
   ret = ndt_typecheck(&spec, sig, types, li, num_intypes, num_outtypes, false,
                       NULL, NULL, &ctx);
-  
+  ndt_type_array_clear(types, num_args);
+  if (ret < 0) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  flags = rb_str_new2(ndt_apply_flags_as_string(&spec));
+  lst = rb_ary_new2(spec.nargs);
+
+  for (int i = 0; i < spec.nargs; ++i) {
+    VALUE x = NdtObject_alloc();
+    NdtObject *x_p;
+    GET_NDT(x, x_p);
+
+    NDT(x_p) = spec.types[i];
+    rb_ary_store(lst, i, x);
+  }
+
+  outer_dims = LL2NUM(spec.outer_dims);
+  nin = LL2NUM(spec.nin);
+  nout = LL2NUM(spec.nout);
+  nargs = LL2NUM(spec.nargs);
+
+  return rb_funcall(rb_const_get(cNDTypes, rb_intern("ApplySpec")), rb_intern("new"),
+                    6, flags, outer_dims, nin, nout, nargs, lst);
 }
 
 /****************************************************************************/
@@ -858,38 +882,18 @@ NDTypes_apply(VALUE self, VALUE input_types)
 static VALUE
 NDTypes_s_deserialize(VALUE klass, VALUE str)
 {
-  NdtObject *ndt_p;
-  ResourceBufferObject *rbuf_p;
-  VALUE ndt, rbuf;
-  char *cp;
-  int64_t len;
   NDT_STATIC_CONTEXT(ctx);
-
+  VALUE self;
+  NdtObject *self_p;
+    
   Check_Type(str, T_STRING);
 
-  cp = StringValuePtr(str);
-  len = RSTRING_LEN(str);
+  self = NdtObject_alloc();
+  GET_NDT(self, self_p);
 
-  rbuf_p = ALLOC(ResourceBufferObject);
-  rbuf_p->m = ndt_meta_new(&ctx);
-  if (rbuf_p->m == NULL) {
-    seterr(&ctx);
-    raise_error();
-  }
-
-  ndt_p = ALLOC(NdtObject);
-  //  NDT(ndt_p) = ndt_deserialize(RBUF_NDT_M(rbuf_p), cp, len, &ctx);
-  if (NDT(ndt_p) == NULL) {
-    seterr(&ctx);
-    raise_error();
-  }
-
-  rbuf = WRAP_RBUF(cNDTypes_RBuf, rbuf_p);
-  RBUF(ndt_p) = rbuf;
-  rb_ndtypes_gc_guard_register(ndt_p, rbuf);
-  ndt = WRAP_NDT(cNDTypes, ndt_p);
+  NDT(self_p) = ndt_deserialize(RSTRING_PTR(str), RSTRING_LEN(str), &ctx);
   
-  return ndt;
+  return self;
 }
 
 /* Create a typedef */

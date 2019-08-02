@@ -2141,9 +2141,7 @@ rb_xnd_hash_size(VALUE hash)
 */
 int
 rb_xnd_get_complex_values(VALUE comp, double *real, double *imag)
-{
-  Check_Type(comp, T_COMPLEX);
-  
+{  
   *real = NUM2DBL(rb_funcall(comp, rb_intern("real"), 0, NULL));
   *imag = NUM2DBL(rb_funcall(comp, rb_intern("imag"), 0, NULL));
 
