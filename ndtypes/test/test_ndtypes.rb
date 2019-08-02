@@ -452,6 +452,35 @@ class TestConstr < Minitest::Test
   end
 end # class TestConstr
 
+class TestTypedef < Minitest::Test
+  def test_instantiate
+    NDT.typedef "node", "int32"
+    NDT.typedef "cost", "int32"
+    NDT.typedef "graph", "var * var * (node, cost)"
+
+    t = NDT.new("var(offsets=[0,2]) * var(offsets=[0,3,10]) * (node, cost)")
+    u = NDT.instantiate("graph", t)
+
+    assert u.concrete?
+
+    t = NDT.new("var(offsets=[0,2]) * var(offsets=[0,2,3]) * var(offsets=[0,1,2,3]) * (node, cost)")
+    assert_raises(ValueError) { NDT.instantiate("graph", t) }
+  end
+end # class TestTypedef
+
+class TestSerialize < Minitest::Test
+  def test_serialize
+    NDT.typedef "xnode", "int32"
+    NDT.typedef "xcost", "int32"
+
+    t = NDT.new("var(offsets=[0,2]) * var(offsets=[0,3,10]) * (xnode, xcost)")
+    b = t.serialize
+    u = NDT.deserialize(b)
+
+    assert u, t
+  end
+end # class TestSerialize
+
 class TestNominal < Minitest::Test
   include Minitest::Hooks
 
@@ -1299,11 +1328,12 @@ class TestApply < Minitest::Test
     in_types = [NDT.new("20 * 2 * 3 * int64"), NDT.new("20 * 3 * 4 * int64")]
 
     spec = sig.apply(in_types)
-
-    assert_equal spec.sig, sig
-    assert_equal spec.in_types, in_types
-    assert_equal spec.out_types, [NDT.new("20 * 2 * 4 * float64")]
+    
     assert_equal spec.outer_dims, 1
+    assert_equal spec.nin, 2
+    assert_equal spec.nout, 1
+    assert_equal spec.nargs, 3
+    assert_equal spec.types, [NDT.new("20 * 2 * 4 * float64")]
   end
 
   def test_apply_error
@@ -1313,22 +1343,25 @@ class TestApply < Minitest::Test
            ["20 * 2 * 100 * int64", "20 * 3 * 4 * int64"]]
 
     lst.each do |l|
-      in_types = l.map { |x| NDT.new(x) }
-      assert_raises(TypeError) { sig.apply(in_types) }
+      types = l.map { |x| NDT.new(x) }
+      assert_raises(TypeError) { sig.apply(types) }
     end
   end
 end # class TestApply
 
 class TestBroadcast < Minitest::Test
   def test_broadcast
-    BROADCAST_TEST_CASES.each do |c|
-      spec = c.sig.apply(c.in_types)
+    BROADCAST_TEST_CASES.each do |d|
+      sig, args, kwargs, expected = d.values
+      spec = sig.apply(args, out: kwargs)
 
-      assert_equal spec.size, c.size
-
-      spec.zip(c).each do |v, u|
-        assert_equal v, u
-      end
+      assert_equal(spec.size, expected.size)
+      assert_equal(spec.flags, expected.flags)
+      assert_equal(spec.outer_dims, expected.outer_dims)
+      assert_equal(spec.nin, expected.nin)
+      assert_equal(spec.nout, expected.nout)
+      assert_equal(spec.nargs, expected.nargs)
+      assert_equal(spec.types, expected.types)
     end
   end
 end # class TestBroadcast
@@ -1346,7 +1379,6 @@ class LongFixedDimTests < Minitest::Test
           s = "fixed(shape=#{shape}, step=#{step}) * #{s}"
         end
 
-        puts "s :: #{s}."
         t = NDT.new s
 
         assert_true verify_datasize(t)

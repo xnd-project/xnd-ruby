@@ -335,6 +335,7 @@ NDTYPES_BOOL_FUNC(ndt_is_complex)
 
 NDTYPES_BOOL_FUNC(ndt_is_c_contiguous)
 NDTYPES_BOOL_FUNC(ndt_is_f_contiguous)
+NDTYPES_BOOL_FUNC(ndt_is_var_contiguous)
 
 static int
 offsets_from_array(ndt_meta_t *m, VALUE array)
@@ -1191,6 +1192,7 @@ void Init_ruby_ndtypes(void)
   rb_define_method(cNDTypes, "complex?", NDTypes_ndt_is_complex, 0);
   rb_define_method(cNDTypes, "c_contiguous?", NDTypes_ndt_is_c_contiguous, 0);
   rb_define_method(cNDTypes, "f_contiguous?", NDTypes_ndt_is_f_contiguous, 0);
+  rb_define_method(cNDTypes, "var_contiguous?", NDTypes_ndt_is_var_contiguous, 0);
   rb_define_method(cNDTypes, "==", NDTypes_eqeq, 1);
   rb_define_method(cNDTypes, "!=", NDTypes_neq, 1);
 

@@ -677,10 +677,10 @@ class TestVarDim < Minitest::Test
     assert_equal y.value, inner
 
     # test errors with empty
-    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 3]) * int64") }
-    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * var(offsets=[0, 3, 10]) * int64") }
-    assert_raises(NotImplementedError) { XND.empty("var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
-    assert_raises(NotImplementedError) { XND.empty("?var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(ValueError) { XND.empty("?var(offsets=[0, 3]) * int64") }
+    assert_raises(ValueError) { XND.empty("?var(offsets=[0, 2]) * var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(ValueError) { XND.empty("var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
+    assert_raises(ValueError) { XND.empty("?var(offsets=[0, 2]) * ?var(offsets=[0, 3, 10]) * int64") }
   end
 
   def test_var_dim_assign
@@ -828,12 +828,12 @@ class TestVarDim < Minitest::Test
     y = XND.new([[1], [4,5]])
     z = x[0..2]
     assert_strict_equal x[0..1], y
-    assert_false z.type.var_contiguous?
+    assert !z.type.var_contiguous?
 
     y = XND.new([[4,5], [6,7,8]])
     z = x[0..-2]
     assert_strict_equal x[1..2], y
-    assert_false z.type.var_contiguous?
+    assert !z.type.var_contiguous?
 
     # TODO: make this pass after Ruby 2.6 step-range
     # y = XND.new([[12,11,10,9], [5,4]])
