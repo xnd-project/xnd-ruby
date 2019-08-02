@@ -1040,6 +1040,16 @@ XND_get_size(VALUE xnd)
 
 /*************************** object properties ********************************/
 
+static VALUE
+XND_dtype(VALUE self)
+{
+  XndObject *self_p;
+  GET_XND(self, self_p);
+  const ndt_t *dtype = ndt_dtype(XND_TYPE(self_p));
+  
+  return rb_ndtypes_from_type(dtype);
+}
+
 /* Return the ndtypes object of this xnd object. */
 static VALUE
 XND_type(VALUE self)
@@ -1869,7 +1879,6 @@ XND_array_store(int argc, VALUE *argv, VALUE self)
     seterr(&ctx);
     raise_error();
   }
-
   value = argv[argc-1];
 
   if (XND_CHECK_TYPE(value)) {
@@ -1885,7 +1894,6 @@ XND_array_store(int argc, VALUE *argv, VALUE self)
   else {
     ret = mblock_init(&x, value);
   }
-
   ndt_decref(x.type);
 
   return value;
@@ -2269,6 +2277,7 @@ void Init_ruby_xnd(void)
   
   /* instance methods */
   rb_define_method(cXND, "type", XND_type, 0);
+  rb_define_method(cXND, "dtype", XND_dtype, 0);
   rb_define_method(cXND, "value", XND_value, 0);
   rb_define_method(cXND, "[]", XND_array_aref, -1);
   rb_define_method(cXND, "[]=", XND_array_store, -1);
