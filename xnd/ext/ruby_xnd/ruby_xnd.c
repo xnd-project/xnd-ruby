@@ -1674,6 +1674,7 @@ XND_eqeq(VALUE self, VALUE other)
   int r;
 
   if (!XND_CHECK_TYPE(other)) {
+    printf("inside mr if\n");
     return convert_compare(self, other);
   }
 

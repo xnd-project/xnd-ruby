@@ -1490,219 +1490,220 @@ class TestRecord < Minitest::Test
   end
 end # class TestRecord
 
-# class TestUnion < Minitest::Test
-#   def test_union_empty
-#     DTYPE_EMPTY_TEST_CASES.each do |v, s|
-#       [
-#         [['X', v], "[X of %s]" % s],
-#         [['X', {'y': v}], "[X of {y: %s}]" % s],
-#         [['X', 0 * [v]], "[X of 0 * %s]" % s],
-#         [['X', {'y': 0 * [v]}], "[X of {y: 0 * %s}]" % s],
-#         [['X', 1 * [v]], "[X of 1 * %s]" % s],
-#         [['X', 3 * [v]], "[X of 3 * %s]" % s],
-#         [['X', 3 * [v]], "[X of 3 * %s | Y of complex128]" % s]
-#       ].each do |vv , ss|
-#         next if ss.include?("ref") || ss.include?("&")
+class TestUnion < Minitest::Test
+  def test_union_empty
+    DTYPE_EMPTY_TEST_CASES.each do |v, s|
+      [
+        [['X', v], "[X of %s]" % s],
+        [['X', {'y': v}], "[X of {y: %s}]" % s],
+        [['X', 0 * [v]], "[X of 0 * %s]" % s],
+        [['X', {'y': 0 * [v]}], "[X of {y: 0 * %s}]" % s],
+        [['X', 1 * [v]], "[X of 1 * %s]" % s],
+        [['X', 3 * [v]], "[X of 3 * %s]" % s],
+        [['X', 3 * [v]], "[X of 3 * %s | Y of complex128]" % s]
+      ].each do |vv , ss|
+        next if ss.include?("ref") || ss.include?("&")
 
-#         t = NDT.new ss
-#         x = XND.empty ss
-#         assert_equal x.type, t
-#         assert_equal x.value, vv
-#       end
-#     end
-#   end
+        t = NDT.new ss
+        x = XND.empty ss
+        assert_equal x.type, t
+        assert_equal x.value, vv
+      end
+    end
+  end
 
-#   def test_union_assign
-#     ### Regular data
-#     x = XND.empty("[X of complex64 | Y of bytes | Z of string]")
+  def test_union_assign
+    ### Regular data
+    x = XND.empty("[X of complex64 | Y of bytes | Z of string]")
 
-#     v = ['X', 1+20i]
-#     x[[]] = v
-#     assert_equal x.value, v
-#     check_copy_contiguous x
+    v = ['X', 1+20i]
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
 
-#     v = ['Y', "abc"]
-#     x[[]] = v
-#     assert_equal x.value, v
-#     check_copy_contiguous x
+    v = ['Y', "abc"]
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
 
-#     v = ['Z', 'abc']
-#     x[[]] = v
-#     assert_equal x.value, v
-#     check_copy_contiguous x
-#   end
+    v = ['Z', 'abc']
+    x[[]] = v
+    assert_equal x.value, v
+    check_copy_contiguous x
+  end
 
-#   def test_union_indexing
-#   ### Regular data
-#     x = XND.empty "[X of complex64 | Y of bytes | Z of string]"
-#     v = ['X', 1+20i]
-#     x[[]] = v
+  def test_union_indexing
+    ### Regular data
+    x = XND.empty "[X of complex64 | Y of bytes | Z of string]"
+    v = ['X', 1+20i]
+    x[[]] = v
 
-#     assert_equal x[0], v[1]
-#     assert_equal x['X'], v[1]
-#     assert_raises(ValueError) { x[1] }
-#     assert_raises(ValueError) { x['Y'] }
-#     assert_raises(ValueError) { x[2] }
-#     assert_raises(ValueError) { x['Z'] }
-#     assert_raises(ValueError) { x[3] }
-#     assert_raises(ValueError) { x[-1] }
-#     assert_raises(ValueError) { x['A'] }
-#   end
+    puts x[0].value
+    assert_equal x[0], v[1]
+    assert_equal x['X'], v[1]
+    assert_raises(ValueError) { x[1] }
+    assert_raises(ValueError) { x['Y'] }
+    assert_raises(ValueError) { x[2] }
+    assert_raises(ValueError) { x['Z'] }
+    assert_raises(ValueError) { x[3] }
+    assert_raises(ValueError) { x[-1] }
+    assert_raises(ValueError) { x['A'] }
+  end
 
-#   def test_union_overflow
-#     s = "[a: 4611686018427387904 * uint8, b: 4611686018427387904 * uint8}"
-#     assert_raises(ValueError) { XND.empty(s) }
-#   end
+  def test_union_overflow
+    s = "[a: 4611686018427387904 * uint8, b: 4611686018427387904 * uint8}"
+    assert_raises(ValueError) { XND.empty(s) }
+  end
 
-#   def test_union_optional_values
-#     lst = [['A', nil], ['B', 10], ['C', [nil, 'abc']]]
-#     x = XND.new(lst, dtype: "[A of ?int64 | B of int64 | C of (?int64, string)]")
-#     assert_equal x.value, lst
-#     check_copy_contiguous x
-#     assert_equal x.dtype, NDT.new("[A of ?int64 | B of int64 | C of (?int64, string)]")
-#   end
+  def test_union_optional_values
+    lst = [['A', nil], ['B', 10], ['C', [nil, 'abc']]]
+    x = XND.new(lst, dtype: "[A of ?int64 | B of int64 | C of (?int64, string)]")
+    assert_equal x.value, lst
+    check_copy_contiguous x
+    assert_equal x.dtype, NDT.new("[A of ?int64 | B of int64 | C of (?int64, string)]")
+  end
 
-#   def test_union_equality
-#     # simple tests
-#     x = XND.new(['Record', {'a' => 1, 'b' => 2.0, 'c' => '3', 'd' => '123'}],
-#       type: "[Int of int64 | Record of {a: uint8, b: float32, c: string, d: bytes}]")
+  def test_union_equality
+    # simple tests
+    x = XND.new(['Record', {'a' => 1, 'b' => 2.0, 'c' => '3', 'd' => '123'}],
+      type: "[Int of int64 | Record of {a: uint8, b: float32, c: string, d: bytes}]")
 
-#     assert_raises(NotImplementedError) { x < x }
-#     assert_raises(NotImplementedError) { x <= x }
-#     assert_raises(NotImplementedError) { x > x }
-#     assert_raises(NotImplementedError) { x >= x }
+    assert_raises(NotImplementedError) { x < x }
+    assert_raises(NotImplementedError) { x <= x }
+    assert_raises(NotImplementedError) { x > x }
+    assert_raises(NotImplementedError) { x >= x }
 
-#     y = x.copy_contiguous
-#     assert_strict_equal x, y
+    y = x.copy_contiguous
+    assert_strict_equal x, y
     
-#     assert_strict_unequal(x, XND.new({'z' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
-#     assert_strict_unequal(x, XND.new({'a' => 2, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
-#     assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.1, 'c' => "3", 'd' => "123"}))
-#     assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "", 'd' => "123"}))
-#     assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "345", 'd' => "123"}))
-#     assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => ""}))
-#     assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "12345"}))
+    assert_strict_unequal(x, XND.new({'z' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 2, 'b'=> 2.0, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.1, 'c' => "3", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "345", 'd' => "123"}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => ""}))
+    assert_strict_unequal(x, XND.new({'a' => 1, 'b'=> 2.0, 'c' => "3", 'd' => "12345"}))
 
-#     # Nested structures
-#       t =  "
-#       {a: uint8,
-#       b: fixed_string(100, 'utf32'),
-#       c: {x: complex128,
-#             y: 2 * 3 * {v: [Int of int64 | Tuple of (bytes, string)],
-#                       u: bytes}},
-#       d: ref(string)}
-#     "
+    # Nested structures
+      t =  "
+      {a: uint8,
+      b: fixed_string(100, 'utf32'),
+      c: {x: complex128,
+            y: 2 * 3 * {v: [Int of int64 | Tuple of (bytes, string)],
+                      u: bytes}},
+      d: ref(string)}
+    "
 
-#     v = {
-#       'a' => 10,
-#       'b' => "\U00001234\U00001001abc",
-#       'c' => {
-#         'x' => 12.1e244+3i,
-#         'y' => [
-#           [
-#             {'v' => ['Tuple', ["123", "456"]], 'u' => 10 * "22"},
-#             {'v' => ['Int', 10], 'u' => 10 * "23"},
-#             {'v' => ['Int', 20], 'u' => 10 * "24"} 
-#           ],
-#           [
-#             {'v' => ['Int', 30], 'u' => "a" },
-#             {'v' => ['Tuple', ["01234", "56789"]], 'u' => "ab"},
-#             {'v' => ['Tuple', ["", ""]], 'u' => "abc" }
-#           ]
-#         ]
-#       },
-#       'd' => 'xyz'
-#     }
+    v = {
+      'a' => 10,
+      'b' => "\U00001234\U00001001abc",
+      'c' => {
+        'x' => 12.1e244+3i,
+        'y' => [
+          [
+            {'v' => ['Tuple', ["123", "456"]], 'u' => 10 * "22"},
+            {'v' => ['Int', 10], 'u' => 10 * "23"},
+            {'v' => ['Int', 20], 'u' => 10 * "24"} 
+          ],
+          [
+            {'v' => ['Int', 30], 'u' => "a" },
+            {'v' => ['Tuple', ["01234", "56789"]], 'u' => "ab"},
+            {'v' => ['Tuple', ["", ""]], 'u' => "abc" }
+          ]
+        ]
+      },
+      'd' => 'xyz'
+    }
 
-#     x = XND.new(v, type: t)
-#     y = XND.new(v, type: t)
+    x = XND.new(v, type: t)
+    y = XND.new(v, type: t)
 
-#     assert_strict_equal x, y
-#     check_copy_contiguous x
+    assert_strict_equal x, y
+    check_copy_contiguous x
 
-#     w = y['c', 'y', 0, 0, 'v'].value
-#     y['c', 'y', 0, 0, 'v'] = ['Int', 12345]
-#     assert_strict_unequal x, y
-#     y['c', 'y', 0, 0, 'v'] = w
-#     assert_strict_equal x, y
-#     check_copy_contiguous x
+    w = y['c', 'y', 0, 0, 'v'].value
+    y['c', 'y', 0, 0, 'v'] = ['Int', 12345]
+    assert_strict_unequal x, y
+    y['c', 'y', 0, 0, 'v'] = w
+    assert_strict_equal x, y
+    check_copy_contiguous x
 
-#     # Test corner cases and many dtypes.
-#     EQUAL_TEST_CASES.each do |v, t, u, _, _|
-#       [
-#         [
-#           ['Some', 0 * [v]], 
-#           "[Int of int64 | Some of 0 * %s]" % t, 
-#           "[Int of int64 | Some of 0 * %s]" % u
-#         ],
-#         [
-#           ['Some', {'y' => 0 * [v]}], 
-#           "[Float of float16 | Some of {y: 0 * %s}]" % t, 
-#           "[Float of float16 | Some of {y: 0 * %s}]" % u
-#         ]
-#       ].each do |vv, tt, uu|
-#         next if tt.include?("ref") || tt.include?("&&")
-#         next if uu.include?("ref") || uu.inlcude?("&&")
+    # Test corner cases and many dtypes.
+    EQUAL_TEST_CASES.each do |v, t, u, _, _|
+      [
+        [
+          ['Some', 0 * [v]], 
+          "[Int of int64 | Some of 0 * %s]" % t, 
+          "[Int of int64 | Some of 0 * %s]" % u
+        ],
+        [
+          ['Some', {'y' => 0 * [v]}], 
+          "[Float of float16 | Some of {y: 0 * %s}]" % t, 
+          "[Float of float16 | Some of {y: 0 * %s}]" % u
+        ]
+      ].each do |vv, tt, uu|
+        next if tt.include?("ref") || tt.include?("&&")
+        next if uu.include?("ref") || uu.inlcude?("&&")
           
-#         ttt = NDT.new tt
-#         x = XND.new vv, type: ttt
-#         check_copy_contiguous x
+        ttt = NDT.new tt
+        x = XND.new vv, type: ttt
+        check_copy_contiguous x
 
-#         y = XND.new vv
-#         assert_strict_equal x, y
+        y = XND.new vv
+        assert_strict_equal x, y
 
-#         unless u.nil?
-#           uuu = NDT.new uu
-#           y = XND.new vv, type: uuu
-#           assert_strict_equal x, y
-#           check_copy_contiguous y
-#         end
-#       end
-#     end
+        unless u.nil?
+          uuu = NDT.new uu
+          y = XND.new vv, type: uuu
+          assert_strict_equal x, y
+          check_copy_contiguous y
+        end
+      end
+    end
 
-#     EQUAL_TEST_CASES.each do |v, t, u, w, eq|
-#       [
-#         [
-#           ['Some', v], 
-#           "[Some of %s]" % t, 
-#           "[Some of %s]" % u, [0]
-#         ],
-#         [
-#           ['Some', 3 * [v]], 
-#           "[Some of 3 * %s]" % t, 
-#           "[Some of 3 * %s]" % u, 
-#           [0, 2]
-#         ]
-#       ].each do |vv, tt, uu, indices|
-#         next if tt.include?("ref") || tt.include?("&")
-#         next if uu.include?("ref") || uu.include?("&")
+    EQUAL_TEST_CASES.each do |v, t, u, w, eq|
+      [
+        [
+          ['Some', v], 
+          "[Some of %s]" % t, 
+          "[Some of %s]" % u, [0]
+        ],
+        [
+          ['Some', 3 * [v]], 
+          "[Some of 3 * %s]" % t, 
+          "[Some of 3 * %s]" % u, 
+          [0, 2]
+        ]
+      ].each do |vv, tt, uu, indices|
+        next if tt.include?("ref") || tt.include?("&")
+        next if uu.include?("ref") || uu.include?("&")
 
-#         ttt = NDT.new tt
-#         uuu = NDT.new uu
+        ttt = NDT.new tt
+        uuu = NDT.new uu
 
-#         x = XND.new vv, type: ttt
-#         check_copy_contiguous x
+        x = XND.new vv, type: ttt
+        check_copy_contiguous x
 
-#         y = XND.new vv, type: ttt
-#         if eq
-#           assert_strict_equal x, y
-#         else
-#           assert_strict_equal x, y
-#         end
+        y = XND.new vv, type: ttt
+        if eq
+          assert_strict_equal x, y
+        else
+          assert_strict_equal x, y
+        end
 
-#         unless u.nil?
-#           y = XND.new vv, type: uuu
-#           if eq
-#             assert_strict_equal x, y
-#           else
-#             assert_strict_unequal x, y
-#           end
-#           check_copy_contiguous y
-#         end
-#       end
-#     end
-#   end
-# end # class Union
+        unless u.nil?
+          y = XND.new vv, type: uuu
+          if eq
+            assert_strict_equal x, y
+          else
+            assert_strict_unequal x, y
+          end
+          check_copy_contiguous y
+        end
+      end
+    end
+  end
+end # class Union
 
 # class TestRef < Minitest::Test
 #   def test_ref_empty
