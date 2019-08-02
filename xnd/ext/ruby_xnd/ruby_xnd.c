@@ -304,6 +304,28 @@ get_uint(VALUE data, uint64_t max)
   return x;
 }
 
+static int
+union_tag_and_value_from_tuple(uint8_t *tag, VALUE *value, const ndt_t *t,
+                               VALUE tuple)
+{
+  VALUE name;
+  
+  assert(t->tag == Union);
+
+  if (RARRAY_LEN(tuple) != 2) {
+    rb_raise(rb_eValueError,
+             "unions are represented by a tuple (tag, value), where tag is a string.");
+  }
+
+  name = rb_ary_entry(tuple, 0);
+
+  Check_Type(name, T_STRING);
+
+  for (int i = 0; i < t->Union.ntags; ++i) {
+    
+  }
+}
+
 /* Initialize an mblock object with data. */
 static int
 mblock_init(xnd_t * const x, VALUE data)
@@ -433,6 +455,26 @@ mblock_init(xnd_t * const x, VALUE data)
     }
 
     return 0;
+  }
+
+  case Union : {
+    VALUE tmp;
+    uint8_t tag;
+
+    if (union_tag_and_value_from_tuple(&tag, &tmp, t, v) < 0) {
+      return -1;
+    }
+
+    xnd_clear(x, XND_OWN_EMBEDDED);
+    XND_UNION_TAG(x->ptr) = tag;
+
+    xnd_t next = xnd_union_next(x, &ctx);
+    if (next.ptr == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+
+    return mblock_init(&next, tmp);
   }
 
   case Ref: {

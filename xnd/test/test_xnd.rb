@@ -1538,7 +1538,6 @@ class TestUnion < Minitest::Test
     v = ['X', 1+20i]
     x[[]] = v
 
-    puts x[0].value
     assert_equal x[0], v[1]
     assert_equal x['X'], v[1]
     assert_raises(ValueError) { x[1] }
