@@ -1495,12 +1495,12 @@ class TestUnion < Minitest::Test
     DTYPE_EMPTY_TEST_CASES.each do |v, s|
       [
         [['X', v], "[X of %s]" % s],
-        [['X', {'y': v}], "[X of {y: %s}]" % s],
-        [['X', 0 * [v]], "[X of 0 * %s]" % s],
-        [['X', {'y': 0 * [v]}], "[X of {y: 0 * %s}]" % s],
-        [['X', 1 * [v]], "[X of 1 * %s]" % s],
-        [['X', 3 * [v]], "[X of 3 * %s]" % s],
-        [['X', 3 * [v]], "[X of 3 * %s | Y of complex128]" % s]
+        [['X', {'y' => v}], "[X of {y: %s}]" % s],
+        [['X', [v] * 0], "[X of 0 * %s]" % s],
+        [['X', {'y' => [v] * 0}], "[X of {y: 0 * %s}]" % s],
+        [['X', [v] * 1], "[X of 1 * %s]" % s],
+        [['X', [v] * 3], "[X of 3 * %s]" % s],
+        [['X', [v] * 3], "[X of 3 * %s | Y of complex128]" % s]
       ].each do |vv , ss|
         next if ss.include?("ref") || ss.include?("&")
 
@@ -1544,7 +1544,7 @@ class TestUnion < Minitest::Test
     assert_raises(ValueError) { x['Y'] }
     assert_raises(ValueError) { x[2] }
     assert_raises(ValueError) { x['Z'] }
-    assert_raises(ValueError) { x[3] }
+    assert_raises(IndexError) { x[3] }
     assert_raises(ValueError) { x[-1] }
     assert_raises(ValueError) { x['A'] }
   end
@@ -1600,9 +1600,9 @@ class TestUnion < Minitest::Test
         'x' => 12.1e244+3i,
         'y' => [
           [
-            {'v' => ['Tuple', ["123", "456"]], 'u' => 10 * "22"},
-            {'v' => ['Int', 10], 'u' => 10 * "23"},
-            {'v' => ['Int', 20], 'u' => 10 * "24"} 
+            {'v' => ['Tuple', ["123", "456"]], 'u' => "22" * 10},
+            {'v' => ['Int', 10], 'u' => "23" * 10},
+            {'v' => ['Int', 20], 'u' => "24" * 10} 
           ],
           [
             {'v' => ['Int', 30], 'u' => "a" },
@@ -1628,26 +1628,26 @@ class TestUnion < Minitest::Test
     check_copy_contiguous x
 
     # Test corner cases and many dtypes.
-    EQUAL_TEST_CASES.each do |v, t, u, _, _|
+    EQUAL_TEST_CASES.each do |s|
       [
         [
-          ['Some', 0 * [v]], 
-          "[Int of int64 | Some of 0 * %s]" % t, 
-          "[Int of int64 | Some of 0 * %s]" % u
+          ['Some', [s.v] * 0], 
+          "[Int of int64 | Some of 0 * %s]" % s.t, 
+          "[Int of int64 | Some of 0 * %s]" % s.u
         ],
         [
-          ['Some', {'y' => 0 * [v]}], 
-          "[Float of float16 | Some of {y: 0 * %s}]" % t, 
-          "[Float of float16 | Some of {y: 0 * %s}]" % u
+          ['Some', {'y' => [s.v] * 0}], 
+          "[Float of float16 | Some of {y: 0 * %s}]" % s.t, 
+          "[Float of float16 | Some of {y: 0 * %s}]" % s.u
         ]
       ].each do |vv, tt, uu|
-        next if tt.include?("ref") || tt.include?("&&")
-        next if uu.include?("ref") || uu.inlcude?("&&")
-          
+        next if tt.include?("ref") || tt.include?("&")
+        next if uu.include?("ref") || uu.include?("&")
+
         ttt = NDT.new tt
         x = XND.new vv, type: ttt
         check_copy_contiguous x
-
+                 
         y = XND.new vv
         assert_strict_equal x, y
 
@@ -1668,7 +1668,7 @@ class TestUnion < Minitest::Test
           "[Some of %s]" % u, [0]
         ],
         [
-          ['Some', 3 * [v]], 
+          ['Some', [v] * 3], 
           "[Some of 3 * %s]" % t, 
           "[Some of 3 * %s]" % u, 
           [0, 2]

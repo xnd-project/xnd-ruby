@@ -309,6 +309,8 @@ union_tag_and_value_from_tuple(uint8_t *tag, VALUE *value, const ndt_t *t,
                                VALUE tuple)
 {
   VALUE name;
+  int64_t i;
+  char *sname;
   
   assert(t->tag == Union);
 
@@ -321,9 +323,21 @@ union_tag_and_value_from_tuple(uint8_t *tag, VALUE *value, const ndt_t *t,
 
   Check_Type(name, T_STRING);
 
-  for (int i = 0; i < t->Union.ntags; ++i) {
-    
+  for (i = 0; i < t->Union.ntags; ++i) {
+    sname = RSTRING_PTR(name);
+    if (strcmp(sname, t->Union.tags[i]) == 0) {
+      break;
+    }
   }
+
+  if (i == t->Union.ntags) {
+    rb_raise(rb_eValueError, "%s is not a valid tag name.", sname);
+  }
+
+  *tag = (uint8_t)i;
+  *value = rb_ary_entry(tuple, 1);
+
+  return 0;
 }
 
 /* Initialize an mblock object with data. */
@@ -461,7 +475,7 @@ mblock_init(xnd_t * const x, VALUE data)
     VALUE tmp;
     uint8_t tag;
 
-    if (union_tag_and_value_from_tuple(&tag, &tmp, t, v) < 0) {
+    if (union_tag_and_value_from_tuple(&tag, &tmp, t, data) < 0) {
       return -1;
     }
 
@@ -1716,7 +1730,6 @@ XND_eqeq(VALUE self, VALUE other)
   int r;
 
   if (!XND_CHECK_TYPE(other)) {
-    printf("inside mr if\n");
     return convert_compare(self, other);
   }
 
@@ -1739,6 +1752,34 @@ XND_spaceship(VALUE self, VALUE other)
 {
   rb_raise(rb_eNotImpError, "spaceship not implemented yet.");
 
+  return Qnil;
+}
+
+static VALUE
+XND_lt(VALUE self, VALUE other)
+{
+  rb_raise(rb_eNotImpError, "< not implemented yet.");
+  return Qnil;
+}
+
+static VALUE
+XND_lteq(VALUE self, VALUE other)
+{
+  rb_raise(rb_eNotImpError, "<= not implemented yet.");
+  return Qnil;
+}
+
+static VALUE
+XND_gt(VALUE self, VALUE other)
+{
+  rb_raise(rb_eNotImpError, "> not implemented yet.");
+  return Qnil;
+}
+
+static VALUE
+XND_gteq(VALUE self, VALUE other)
+{
+  rb_raise(rb_eNotImpError, ">= not implemented yet.");
   return Qnil;
 }
 
@@ -2329,6 +2370,11 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "copy_contiguous", XND_copy_contiguous, -1);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);
+  rb_define_method(cXND, "<=>", XND_spaceship, 1);
+  rb_define_method(cXND, "<", XND_lt, 1);
+  rb_define_method(cXND, "<=", XND_lteq, 1);
+  rb_define_method(cXND, ">", XND_gt, 1);
+  rb_define_method(cXND, ">=", XND_gteq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);
   rb_define_method(cXND, "strict_equal", XND_strict_equal, 1);
   rb_define_method(cXND, "size", XND_size, 0);
