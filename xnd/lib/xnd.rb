@@ -87,6 +87,10 @@ class XND < RubyXND
       @data.map!(&block)
     end
 
+    def == other
+      @data == other.data
+    end
+
     def [] *index
       @data[index]
     end
@@ -170,8 +174,6 @@ class XND < RubyXND
       def accumulate arr
         result = []
         arr.inject(0) do |memo, a|
-          puts "m: #{memo}"
-          puts "a: #{a}"
           result << memo + a
           memo + a
         end

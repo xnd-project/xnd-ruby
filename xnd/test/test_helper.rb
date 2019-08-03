@@ -24,6 +24,9 @@ def assert_equal_with_ex func, x, y
     return
   end
 
+  # Ruby defines a 'size' method on numbers too which creates a problem.
+  y = nil if y.is_a?(Numeric)
+
   xerr = nil
   begin
     xres = x.send(func)
