@@ -88,7 +88,11 @@ class XND < RubyXND
     end
 
     def == other
-      @data == other.data
+      if other.is_a?(XND::T)
+        @data == other.data
+      else
+        @data == other
+      end
     end
 
     def [] *index
