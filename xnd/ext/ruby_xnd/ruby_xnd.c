@@ -37,6 +37,10 @@
 #include "ruby_xnd_internal.h"
 #include "xnd.h"
 
+#define XND_CHECK_NUMERIC(obj) Check_Type(obj, T_FIXNUM); \
+  Check_Type(obj, T_BIGNUM); Check_Type(obj, T_RATIONAL); \
+  Check_Type(obj, T_RATIONAL);
+
 VALUE cRubyXND;
 VALUE cXND;
 static VALUE cRubyXND_MBlock;
@@ -1558,6 +1562,7 @@ static VALUE
 RubyXND_view_move_type(XndObject *src_p, xnd_t *x)
 {
   XndObject *view_p;
+  MemoryBlockObject* mblock_p;
   VALUE type, view;
 
   type = rb_ndtypes_from_type(x->type);
@@ -1570,7 +1575,11 @@ RubyXND_view_move_type(XndObject *src_p, xnd_t *x)
   view_p->type = type;
   view_p->xnd = *x;
 
-  //  rb_xnd_gc_guard_register(view_p, view_p->mblock, type);
+  GET_MBLOCK(view_p->mblock, mblock_p);
+  
+  rb_xnd_gc_guard_register_xnd_type(view_p, type);
+  rb_xnd_gc_guard_register_xnd_mblock(view_p, view_p->mblock);
+  rb_xnd_gc_guard_register_mblock_type(mblock_p, type);
 
   return view;
 }
@@ -2012,6 +2021,61 @@ XND_short_value(VALUE self, VALUE maxshape)
 }
 
 static VALUE
+XND_transpose(int argc, VALUE * argv, VALUE self) {
+  NDT_STATIC_CONTEXT(ctx);
+  VALUE permute = Qnil;
+  int p[NDT_MAX_ARGS];
+  const ndt_t *t;
+  xnd_t x;
+  XndObject *self_p;
+
+  GET_XND(self, self_p);
+
+  if (argc == 1) {
+    permute = argv[0];
+  }
+  else if (argc > 1) {
+    rb_raise(rb_eArgError, "cannot have more than 1 arg to XND#transpose.");
+  }
+
+  if (permute != Qnil) {
+    Check_Type(permute, T_ARRAY);
+    const size_t len = RARRAY_LEN(permute);
+
+    if (len > NDT_MAX_ARGS) {
+      rb_raise(rb_eValueError, "permutation list is too long.");
+    }
+
+    for (int i = 0; i < len; i++) {
+      VALUE v_obj = rb_ary_entry(permute, i);
+      Check_Type(v_obj, T_FIXNUM);
+      int v = FIX2INT(v_obj);
+      
+      if (v < 0 || v > INT_MAX) {
+        rb_raise(rb_eValueError, "permutation index is out of bounds.");
+      }
+      p[i] = (int)v;
+    }
+    
+    t = ndt_transpose(XND_TYPE(self_p), p, (int)len, &ctx);
+  }
+  else {
+    t = ndt_transpose(XND_TYPE(self_p), NULL, 0, &ctx);
+  }
+
+  if (t == NULL) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  x = *XND(self_p);
+  x.type = t;
+
+  return RubyXND_view_move_type(self_p, &x);
+} 
+
+/* XND#copy_contiguous */
+static VALUE
 XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
 {
   NDT_STATIC_CONTEXT(ctx);
@@ -2368,6 +2432,7 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "==", XND_eqeq, 1);
   rb_define_method(cXND, "serialize", XND_serialize, 0);
   rb_define_method(cXND, "copy_contiguous", XND_copy_contiguous, -1);
+  rb_define_method(cXND, "transpose", XND_transpose, -1);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);

@@ -3218,189 +3218,189 @@ class TestTypeInference < Minitest::Test
   end
 end # class TestTypeInference
 
-# class TestEach < Minitest::Test
-#   def test_each
-#     DTYPE_EMPTY_TEST_CASES.each do |v, s|
-#       [
-#         [[[v] * 1] * 1, "!1 * 1 * #{s}"],
-#         [[[v] * 2] * 1, "!1 * 2 * #{s}"],
-#         [[[v] * 1] * 2, "!2 * 1 * #{s}"],
-#         [[[v] * 2] * 2, "2 * 2 * #{s}"],
-#         [[[v] * 3] * 2, "2 * 3 * #{s}"],
-#         [[[v] * 2] * 3, "3 * 2 * #{s}"]
-#       ].each do |vv, ss|
-#         x = XND.new vv, type: ss
+class TestEach < Minitest::Test
+  def test_each
+    DTYPE_EMPTY_TEST_CASES.each do |v, s|
+      [
+        [[[v] * 1] * 1, "!1 * 1 * #{s}"],
+        [[[v] * 2] * 1, "!1 * 2 * #{s}"],
+        [[[v] * 1] * 2, "!2 * 1 * #{s}"],
+        [[[v] * 2] * 2, "2 * 2 * #{s}"],
+        [[[v] * 3] * 2, "2 * 3 * #{s}"],
+        [[[v] * 2] * 3, "3 * 2 * #{s}"]
+      ].each do |vv, ss|
+        x = XND.new vv, type: ss
 
-#         lst = []
-#         x.each do |v|
-#           lst << v
-#         end
+        lst = []
+        x.each do |v|
+          lst << v
+        end
 
-#         x.each_with_index do |i, z|
-#           assert_equal z.value, lst[i].value
-#         end
-#       end
-#     end
-#   end
-# end # class TestEach
+        x.each_with_index do |i, z|
+          assert_equal z.value, lst[i].value
+        end
+      end
+    end
+  end
+end # class TestEach
 
-# class TestAPI < Minitest::Test
-#   def test_short_value
-#     x = XND.new [1,2]
-#     q = XND::Ellipsis.new
+class TestAPI < Minitest::Test
+  def test_short_value
+    x = XND.new [1,2]
+    q = XND::Ellipsis.new
     
-#     assert_equal x.short_value(0), []
-#     assert_equal x.short_value(1), [XND::Ellipsis.new]
-#     assert_equal x.short_value(2), [1, XND::Ellipsis.new]
-#     assert_equal x.short_value(3), [1, 2]
+    assert_equal x.short_value(0), []
+    assert_equal x.short_value(1), [XND::Ellipsis.new]
+    assert_equal x.short_value(2), [1, XND::Ellipsis.new]
+    assert_equal x.short_value(3), [1, 2]
 
-#     x = XND.new [[1,2], [3]]
-#     assert_equal [], x.short_value(0)
-#     assert_equal [XND::Ellipsis.new], x.short_value(1)
-#     assert_equal [[1, XND::Ellipsis.new], XND::Ellipsis.new], x.short_value(2)
-#     assert_equal [[1, 2], [3]], x.short_value(3)
-#     assert_raises(ArgumentError) { x.short_value(-1) }
+    x = XND.new [[1,2], [3]]
+    assert_equal [], x.short_value(0)
+    assert_equal [XND::Ellipsis.new], x.short_value(1)
+    assert_equal [[1, XND::Ellipsis.new], XND::Ellipsis.new], x.short_value(2)
+    assert_equal [[1, 2], [3]], x.short_value(3)
+    assert_raises(ArgumentError) { x.short_value(-1) }
     
-#     x = XND.new({'a' => 1, 'b' => 2 })
-#     assert_equal x.short_value(0), {}
-#     assert_equal x.short_value(3), {'a' => 1, 'b'=> 2}
-#     assert_raises(ArgumentError){ x.short_value(-1) }
-#   end
-# end # class TestAPI
+    x = XND.new({'a' => 1, 'b' => 2 })
+    assert_equal x.short_value(0), {}
+    assert_equal x.short_value(3), {'a' => 1, 'b'=> 2}
+    assert_raises(ArgumentError){ x.short_value(-1) }
+  end
+end # class TestAPI
 
-# class TestToS < Minitest::Test
-#   def test_to_s
-#     lst = [[[{'a'=> 100, 'b' => "xyz", 'c'=> ['abc', 'uvw']}] * 23] * 19] * 10
-#     x = XND.new lst
-#     r = x.to_s
+class TestToS < Minitest::Test
+  def test_to_s
+    lst = [[[{'a'=> 100, 'b' => "xyz", 'c'=> ['abc', 'uvw']}] * 23] * 19] * 10
+    x = XND.new lst
+    r = x.to_s
 
-#     assert r.size < 100000
-#   end
-# end # class TestToS
+    assert r.size < 100000
+  end
+end # class TestToS
 
-# class TestBuffer < Minitest::Test
-#   def test_from_nmatrix
+class TestBuffer < Minitest::Test
+  def test_from_nmatrix
     
-#   end
+  end
 
-#   def test_from_numbuffer
+  def test_from_numbuffer
     
-#   end
+  end
 
-#   def test_from_narray
+  def test_from_narray
     
-#   end
-# end # class TestBuffer
+  end
+end # class TestBuffer
 
-# class TestReshape < Minitest::Test
-#   def test_reshape_api
-#     x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
-#     assert_raises(ValueError) { x.reshape(2**32, 2**32) }
-#   end
+class TestReshape < Minitest::Test
+  def test_reshape_api
+    x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
+    assert_raises(ValueError) { x.reshape(2**32, 2**32) }
+  end
 
-#   def test_reshape_fortran
-#     x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
-#     y = x.reshape(3, 2, order: 'F')
-#     assert_equal y, [[1,5], [4,3], [2,6]]
-#   end    
-# end # class TestReshape
+  def test_reshape_fortran
+    x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
+    y = x.reshape(3, 2, order: 'F')
+    assert_equal y, [[1,5], [4,3], [2,6]]
+  end    
+end # class TestReshape
                                      
-# class TestSplit < Minitest::Test
-#   def test_split
+class TestSplit < Minitest::Test
+  def test_split
     
-#   end
+  end
 
-#   def test_split_limit_outer
+  def test_split_limit_outer
     
-#   end
-# end # class TestSplit
+  end
+end # class TestSplit
 
-# class TestTranspose < Minitest::Test
-#   def test_api
-#     x = XND.new []
-#     y = x.transpose
+class TestTranspose < Minitest::Test
+  def test_api
+    x = XND.new []
+    y = x.transpose
 
-#     assert_equal y, x
+    assert_equal y, x
 
-#     y = x.transpose(permute: [0])
-#     assert_equal y, x
-#     assert_raises(ValueError) { x.transpose(permute: []) }
-#     assert_raises(ValueError) { x.transpose(permute: [0,0]) }
-#     assert_raises(ValueError) { x.transpose(permute: [0,1]) }
+    y = x.transpose(permute: [0])
+    assert_equal y, x
+    assert_raises(ValueError) { x.transpose(permute: []) }
+    assert_raises(ValueError) { x.transpose(permute: [0,0]) }
+    assert_raises(ValueError) { x.transpose(permute: [0,1]) }
 
-#     x = XND.new [1,2,3]
-#     y = x.transpose
-#     assert_equal y, x
+    x = XND.new [1,2,3]
+    y = x.transpose
+    assert_equal y, x
 
-#     y = x.transpose
-#     assert_equal y, x
-#     assert_raises(ValueError) { x.transpose(permute: [-1]) }
-#     assert_raises(ValueError) { x.transpose(permute: [2]) }
-#     assert_raises(ValueError) { x.transpose(permute: [0,1]) }
+    y = x.transpose
+    assert_equal y, x
+    assert_raises(ValueError) { x.transpose(permute: [-1]) }
+    assert_raises(ValueError) { x.transpose(permute: [2]) }
+    assert_raises(ValueError) { x.transpose(permute: [0,1]) }
 
-#     x = XND.new [[1], [2,3]]
-#     assert_raises(ValueError) { x.transpose }
+    x = XND.new [[1], [2,3]]
+    assert_raises(ValueError) { x.transpose }
 
-#     x = XND.new [[1,2,3], [4,5,6]]
-#     y = XND.new [[1,4], [2,5], [3,6]]
-#     z = x.transpose
-#     assert_equal z, y
+    x = XND.new [[1,2,3], [4,5,6]]
+    y = XND.new [[1,4], [2,5], [3,6]]
+    z = x.transpose
+    assert_equal z, y
 
-#     z = x.transpose [0,1]
-#     assert_equal z, x
+    z = x.transpose [0,1]
+    assert_equal z, x
 
-#     z = x.transpose [1,0]
-#     assert_equal z, y
+    z = x.transpose [1,0]
+    assert_equal z, y
 
-#     assert_raises(ValueError) {x.transpose(permute: [1,1])}
-#     assert_raises(ValueError) {x.transpose(permute: [10,1])}
-#   end
+    assert_raises(ValueError) {x.transpose(permute: [1,1])}
+    assert_raises(ValueError) {x.transpose(permute: [10,1])}
+  end
 
-#   def test_nd
-#     lst = [
-#       [
-#         [0, 1, 3, 3],
-#         [4, 5, 6, 7],
-#         [8, 9, 10, 11]
-#       ],
-#       [
-#         [12, 13, 14, 15],
-#         [16, 17, 18, 19],
-#         [20, 21, 22, 23]
-#       ]
-#     ]
+  def test_nd
+    lst = [
+      [
+        [0, 1, 3, 3],
+        [4, 5, 6, 7],
+        [8, 9, 10, 11]
+      ],
+      [
+        [12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]
+      ]
+    ]
 
-#     x = XND.new lst
-#     ans = [
-#       x[0..-1, 0].value,
-#       x[0..-1, 1].value,
-#       x[0..-1, 2].value
-#     ]
-#     assert_equal x.transpose(permute:[1,0,2]), ans
-#   end
-# end
+    x = XND.new lst
+    ans = [
+      x[0..-1, 0].value,
+      x[0..-1, 1].value,
+      x[0..-1, 2].value
+    ]
+    assert_equal x.transpose(permute:[1,0,2]), ans
+  end
+end
 
-# class TestCopy < Minitest::Test
-#   def test_copy_contiguous
-#     x = XND.new [[1,2,3], [4,5,6]], dtype: "int8"
-#     y = x.copy_contiguous
-#     assert_equal x, y
+class TestCopy < Minitest::Test
+  def test_copy_contiguous
+    x = XND.new [[1,2,3], [4,5,6]], dtype: "int8"
+    y = x.copy_contiguous
+    assert_equal x, y
 
-#     y = x.copy_contiguous dtype: "int64"
-#     assert_equal x, y
+    y = x.copy_contiguous NDT.new("int64")
+    assert_equal x, y
 
-#     x = XND.new [1,2,2**62], dtype: "int64"
-#     assert_raises()
-#   end
-# end
+    x = XND.new [1,2,2**62], dtype: "int64"
+    assert_raises()
+  end
+end
 
-# class TestView < Minitest::Test
-#   def test_view_subscript
+class TestView < Minitest::Test
+  def test_view_subscript
     
-#   end
+  end
 
-#   def test_view_new
+  def test_view_new
     
-#   end
-# end # class TestView
+  end
+end # class TestView
 
