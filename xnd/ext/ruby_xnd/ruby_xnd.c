@@ -2020,23 +2020,16 @@ XND_short_value(VALUE self, VALUE maxshape)
   }
 }
 
+/* Implementation of XND#_transpose */
 static VALUE
-XND_transpose(int argc, VALUE * argv, VALUE self) {
+XND_transpose(VALUE self, VALUE permute) {
   NDT_STATIC_CONTEXT(ctx);
-  VALUE permute = Qnil;
   int p[NDT_MAX_ARGS];
   const ndt_t *t;
   xnd_t x;
   XndObject *self_p;
 
   GET_XND(self, self_p);
-
-  if (argc == 1) {
-    permute = argv[0];
-  }
-  else if (argc > 1) {
-    rb_raise(rb_eArgError, "cannot have more than 1 arg to XND#transpose.");
-  }
 
   if (permute != Qnil) {
     Check_Type(permute, T_ARRAY);
@@ -2474,7 +2467,7 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "==", XND_eqeq, 1);
   rb_define_method(cXND, "serialize", XND_serialize, 0);
   rb_define_method(cXND, "copy_contiguous", XND_copy_contiguous, -1);
-  rb_define_method(cXND, "transpose", XND_transpose, -1);
+  rb_define_method(cXND, "_transpose", XND_transpose, 1);
   rb_define_method(cXND, "_reshape", XND_reshape, 2);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);

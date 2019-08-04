@@ -285,6 +285,19 @@ class XND < RubyXND
       end
     end
   end
+
+  class << self
+    def empty type, device: nil
+      if device
+        name, no = device.split ":"
+        no = (no == "managed" ? -1 : no.to_i)
+        device = [name, no]
+      end
+      
+      RubyXND.empty type, device
+    end
+  end
+
   
   def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil,
       dtypedef: nil, device: nil
@@ -329,16 +342,8 @@ class XND < RubyXND
     _reshape(shape, order)
   end
 
-  class << self
-    def empty type, device: nil
-      if device
-        name, no = device.split ":"
-        no = (no == "managed" ? -1 : no.to_i)
-        device = [name, no]
-      end
-      
-      RubyXND.empty type, device
-    end
+  def transpose permute: nil
+    _transpose(permute)
   end
 
   alias :to_a :value

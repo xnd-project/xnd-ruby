@@ -3220,6 +3220,7 @@ end # class TestTypeInference
 
 class TestEach < Minitest::Test
   def test_each
+    skip
     DTYPE_EMPTY_TEST_CASES.each do |v, s|
       [
         [[[v] * 1] * 1, "!1 * 1 * #{s}"],
@@ -3339,17 +3340,17 @@ class TestTranspose < Minitest::Test
     assert_raises(ValueError) { x.transpose(permute: [0,1]) }
 
     x = XND.new [[1], [2,3]]
-    assert_raises(ValueError) { x.transpose }
+    assert_raises(TypeError) { x.transpose }
 
     x = XND.new [[1,2,3], [4,5,6]]
     y = XND.new [[1,4], [2,5], [3,6]]
     z = x.transpose
     assert_equal z, y
 
-    z = x.transpose [0,1]
+    z = x.transpose permute: [0,1]
     assert_equal z, x
 
-    z = x.transpose [1,0]
+    z = x.transpose permute: [1,0]
     assert_equal z, y
 
     assert_raises(ValueError) {x.transpose(permute: [1,1])}
