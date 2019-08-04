@@ -843,7 +843,7 @@ class TestNominal < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
-    assert_true t.var_contigous?
+    assert_true t.var_contiguous?
   end
 
   def test_nominal_common_fields
@@ -1059,9 +1059,8 @@ class TestFixedBytes < Minitest::Test
 
       assert_equal t.itemsize, 1024
       assert_equal t.align, align
-
-#      assert_raises(NoMethodError) { t.shape }
-#      assert_raises(NoMethodError) { t.strides }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 
@@ -1087,6 +1086,7 @@ class TestString < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contiguous?
   end
 
   def test_string_common_fields
@@ -1095,9 +1095,8 @@ class TestString < Minitest::Test
     assert_equal t.ndim, 0
     assert_equal t.itemsize, SIZEOF_PTR
     assert_equal t.align, SIZEOF_PTR
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestString
 
@@ -1117,6 +1116,7 @@ class TestBytes < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contiguous?
   end
 
   def test_bytes_common_fields
@@ -1126,9 +1126,8 @@ class TestBytes < Minitest::Test
 
     assert_equal t.itemsize, 16
     assert_equal t.align, 8
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestBytes
 
@@ -1148,6 +1147,7 @@ class TestChar < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contiguous?
   end
 
   def test_char_common_fields
@@ -1157,9 +1157,8 @@ class TestChar < Minitest::Test
     assert_equal t.ndim, 0
     assert_equal t.itemsize, 4
     assert_equal t.align, 4
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestChar
 
@@ -1179,6 +1178,7 @@ class TestBool < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contiguous?
   end
 
   def test_bool_common_fields
@@ -1187,9 +1187,8 @@ class TestBool < Minitest::Test
     assert_equal t.ndim, 0
     assert_equal t.itemsize, 1
     assert_equal t.align, 1
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestBool
 
@@ -1209,6 +1208,7 @@ class TestSignedKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_signed_kind_common_fields
@@ -1242,6 +1242,7 @@ class TestSigned < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -1258,8 +1259,8 @@ class TestSigned < Minitest::Test
 
       assert_equal t.itemsize, itemsize
       assert_equal t.align, itemsize
-
-#      assert_raises(NoMethodError) { t.shape }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 end # class TestSigned
@@ -1280,6 +1281,7 @@ class TestUnsignedKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_unsigned_kind_common_fields
@@ -1314,6 +1316,7 @@ class TestUnsigned < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -1330,12 +1333,11 @@ class TestUnsigned < Minitest::Test
 
       assert_equal t.itemsize, itemsize
       assert_equal t.align, itemsize
-
-#      assert_raises(NoMethodError) { t.shape }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 end # class TestUnsigned
-
 
 class TestFloatKind < Minitest::Test
   def test_float_kind_predicates
@@ -1353,6 +1355,7 @@ class TestFloatKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_float_kind_common_fields
@@ -1386,6 +1389,7 @@ class TestFloat < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -1399,8 +1403,8 @@ class TestFloat < Minitest::Test
 
       assert_equal t.itemsize, itemsize
       assert_equal t.align, itemsize
-
-#      assert_raises(NoMethodError) { t.shape }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 end # class TestFloat
@@ -1421,6 +1425,7 @@ class TestComplexKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_complex_kind_common_fields
@@ -1454,6 +1459,7 @@ class TestComplex < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -1467,8 +1473,8 @@ class TestComplex < Minitest::Test
 
       assert_equal t.itemsize, itemsize
       assert_equal t.align, itemsize / 2
-
-#      assert_raises(NoMethodError) { t.shape }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 end # class TestComplex
@@ -1489,6 +1495,7 @@ class TestTypevar < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_typevar_common_fields
@@ -1505,7 +1512,16 @@ end # class TestTypevar
 
 class TestDup < Minitest::Test
   # TODO: Add #dup test here from rspec. Call the method `test_dup`
-end
+  def test_dup
+    DTYPE_TEST_CASES.each do |dtype, mem| 
+      t = NDT.new dtype
+      u = t.dup
+
+      assert_equal u, t
+      assert_equal u.ast_repr, t.ast_repr
+    end
+  end
+end # class TestDup
 
 class TestBufferProtocol < Minitest::Test
   def test_array

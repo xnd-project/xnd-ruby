@@ -42,6 +42,10 @@ class NDTypes
 
     allocate.tap { |i| i.send :initialize, *args, &block }
   end
+
+  def at n,  dtype: nil
+    _at(n, dtype)
+  end
 end
 
 NDT = NDTypes
