@@ -19,6 +19,7 @@ class TestModule < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_module_common_fields
@@ -50,6 +51,7 @@ class TestFunction < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_function_common_fields
@@ -81,6 +83,7 @@ class TestVoid < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_void_exception
@@ -103,6 +106,7 @@ class TestAny < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_any_common_fields
@@ -119,6 +123,225 @@ class TestAny < Minitest::Test
 end # class TestAny
 
 # Put FixedDim here
+class TestFixedDim < Minitest::Test
+  def tset_fixed_dim_predicates
+    t = NDT.new "10 * 20 * complex128"
+    assert_serialize t
+
+    assert_false t.abstract?
+    assert_false t.complex?
+    assert_true t.concrete?
+    assert_false t.float?
+    assert_false t.optional?
+    assert_false t.scalar?
+    assert_false t.signed?
+    assert_false t.unsigned?
+
+    assert_false t.c_contiguous?
+    assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
+  end
+
+  def test_fixed_dim_common_fields
+    dt = "{a: complex128, b: string}"
+    t = NDT.new("2 * 3 * #{dt}")
+    assert_serialize t
+
+    dtype = NDT.new dt
+
+    assert_equal t.ndim, 2
+    assert_equal t.shape, [2,3]
+    assert_equal t.strides, [3 * dtype.itemsize, dtype.itemsize]
+  end
+  
+  def test_fixed_dim_invariants
+    assert_raises(TypeError) { NDT.new("10 * var * int8") }
+    assert_raises(TypeError) { NDT.new("var * 10 * int16") }
+    assert_raises(TypeError) { NDT.new("10 * var * 10 * int32") }
+    assert_raises(TypeError) { NDT.new("var * 10 * var * int64") }
+  end
+
+  def test_fixed_dim_dtypes
+    DTYPE_TEST_CASES.each do |dtype, mem|
+      t = NDT.new dtype
+      assert t.ndim, 0
+
+      assert t.shape, []
+      assert t.strides, []
+
+      10.times do |i|
+        t = NDT.new("#{i} * #{dtype}")
+        assert_serialize t
+        shape = [i]
+        strides = [mem.itemsize]
+
+        assert_equal t.ndim, 1
+
+        assert_equal t.shape, shape
+        assert_equal t.datasize, c_datasize(t)
+        assert verify_datasize(t)
+      end
+
+      10.times do |i|
+        10.times do |j|
+          t = NDT.new("#{i} * #{j} * #{dtype}")
+          assert_serialize t
+          shape = [i,j]
+          strides = [j * mem.itemsize, mem.itemsize]
+
+          assert_equal t.ndim, 2
+
+          assert_equal t.shape, shape
+          assert_equal t.datasize, c_datasize(t)
+          assert verify_datasize(t)
+        end
+      end
+
+      5.times do |i|
+        5.times do |j|
+          5.times do |k|
+            t = NDT.new("#{i} * #{j} * #{k} * #{dtype}")
+            assert_serialize t
+            shape = [i,j,k]
+            strides = [j * k * mem.itemsize, k * mem.itemsize, mem.itemsize]
+
+            assert_equal t.ndim , 3
+            
+            assert_equal t.shape, shape
+            assert_equal t.datasize, c_datasize(t)
+            assert verify_datasize(t)
+          end
+        end
+      end # 5.times do |i|
+    end # DTYPE_TEST_CASES.each
+  end
+
+  def test_fixed_dim_at
+    ["2 * 3 *", "0 * 1 * "].each do |dims|
+      t = NDT.new(dims + "int8")
+
+      u = t.at(0)
+      assert_equal u, NDT.new(dims + "int8")
+
+      u = t.at(1)
+      assert_equal u, NDT.new(dims[4..-1] + "int8")
+
+      u = t.at(2)
+      assert_equal u, NDT.new("int8")
+
+      u = t.at(0, dtype: "int64")
+      assert_equal u, NDT.new(dims + "int64")
+
+      u = t.at(1, dtype: "int64")
+      assert_equal u, NDT.new(dims[4..-1] + "int64")
+
+      u = t.at(2, dtype: "int64")
+      assert_equal u, NDT.new("int64")
+
+      assert_raises(ValueError) { t.at(-1) }
+      assert_raises(ValueError) { t.at(-3) }
+    end
+  end
+end # class TestFixedDim
+
+class TestFortran < Minitest::Test
+  def test_fortran_predicates
+    t = NDT.new "!10 * 20 * complex128"
+
+    assert_false t.abstract?
+    assert_false t.complex?
+    assert_true t.concrete?
+    assert_false t.float?
+    assert_false t.optional?
+    assert_false t.scalar?
+    assert_false t.signed?
+    assert_false t.unsigned?
+
+    assert_false t.c_contiguous?
+    assert_true t.f_contiguous?
+    assert_false t.var_contiguous?
+
+    t = NDT.new "!20 * complex128"
+    
+    assert_true t.c_contiguous?
+    assert_true t.f_contiguous?
+    assert_false t.var_contiguous?
+
+    t = NDT.new "!1 * 10 * uint8"
+    
+    assert_true t.c_contiguous?
+    assert_true t.f_contiguous?
+    assert_false t.var_contiguous?
+  end
+
+  def test_fortran_common_fields
+    dt = "{a: complex64, b: string}"
+    t = NDT.new "!2 * 3 * #{dt}"
+    dtype = NDT.new dt
+
+    assert_equal t.ndim, 2
+    assert_equal t.shape, [2,3]
+    assert_equal t.strides, [dtype.itemsize, 2 * dtype.itemsize]
+    assert_true verify_datasize(t)
+  end
+
+  # FIXME: finish this function.
+  def test_fortran_dtypes
+    DTYPE_TEST_CASES.each do |dtype, mem|
+      t = NDT.new dtype
+      assert_equal t.ndim, 0
+      assert_equal t.shape, []
+      assert_equal t.strides, []
+
+      10.times do |i| 
+      end
+
+      10.times do |i|
+        10.times do |j| 
+        end
+      end
+
+      5.times do |i|
+        5.times do |j|
+          5.times do |k| 
+          end
+        end
+      end
+    end
+  end
+
+  def test_fortran_conversion
+    s = "!fixed(shape=2, step=-20) * uint8"
+    assert_raises(TypeError) { NDT.new(s) }
+  end
+
+  def test_fortran_at
+    ["2 * 3 *", "0 * 1 * "].each do |dims|
+      t = NDT.new("!" + dims + "int8")
+
+      u = t.at(0)
+      assert_equal u, NDT.new(dims + "int8")
+
+      u = t.at(1)
+      assert_equal u, NDT.new(dims[4..-1] + "int8")
+
+      u = t.at(2)
+      assert_equal u, NDT.new("int8")
+
+      u = t.at(0, dtype: "int64")
+      assert_equal u, NDT.new(dims[4..-1] + "int64")
+
+      u = t.at(1, dtype: "int64")
+      assert_equal u, NDT.new(dims[4..-1] + "int64")
+
+      u = t.at(2, dtype: "int64")
+      assert_equal u, NDT.new("int64")
+
+      assert_raises(ValueError) { t.at(-1) }
+      assert_raises(ValueError) { t.at(-3) }
+    end
+  end
+end # class TestFortran
 
 class TestVarDim < Minitest::Test
   def test_var_dim_predicates
@@ -136,6 +359,17 @@ class TestVarDim < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
+
+    t = NDT.new "20 * complex128"
+    assert t.c_contiguous?
+    assert t.f_contiguous?
+    assert_false t.var_contiguous?
+
+    t = NDT.new "1 * 10 * complex128"
+    assert t.c_contiguous?
+    assert t.f_contiguous?
+    assert_false t.var_contiguous?    
   end
 
   def test_var_dim_common_fields
@@ -267,6 +501,42 @@ class TestEllipsisDim < Minitest::Test
   end
 end # class TestEllipsisDim
 
+class TestArray < Minitest::Test
+  def test_array_predicates
+    t = NDT.new "array of complex128"
+    assert_serialize t
+
+    assert_false t.abstract?
+    assert_false t.complex?
+    assert_true t.concrete?
+    assert_false t.float?
+    assert_false t.optional?
+    assert_false t.scalar?
+    assert_false t.signed?
+    assert_false t.unsigned?
+
+    assert_false t.c_contiguous?
+    assert_false t.f_contiguous?
+  end
+
+  def test_array_dim_common_fields
+    dt = "{a: complex64, b: float64}"
+    t = NDT.new "array of #{dt}"
+    assert_serialize t
+    dtype = NDT.new dt
+
+    assert_equal t.ndim, 1
+
+    assert_raises(TypeError) { t.shape }
+    assert_raises(TypeError) { t.strides }
+  end
+
+  def test_array_invariants
+    assert_raises(TypeError) { NDT.new("array of 2 * int64") }
+    assert_raises(TypeError) { NDT.new("array of var * int64") }
+  end
+end # class TestArray
+
 class TestTuple < Minitest::Test
   def test_tuple_predicates
     ["()", "(int64)", "(string, bytes, pack=1)"].each do |s|
@@ -284,6 +554,7 @@ class TestTuple < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
 
     ["(Any)", "(int64, N * M * uint8)", "(string, Float)"].each do |s|
@@ -301,6 +572,7 @@ class TestTuple < Minitest::Test
 
       assert_false t.c_contiguous?
       assert_false t.f_contiguous?
+      assert_false t.var_contiguous?
     end
   end
 
@@ -311,9 +583,8 @@ class TestTuple < Minitest::Test
     field = NDT.new f
 
     assert_equal t.ndim, 0
-
-#    assert_raises(TypeError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestTuple
 
@@ -333,7 +604,8 @@ class TestRecord < Minitest::Test
       assert_false t.unsigned?
 
       assert_true t.c_contiguous?
-      assert_true t.f_contiguous?      
+      assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
 
     ["{a: Any, b: Complex}", "{x: N * M * T}"].each do |s|
@@ -351,6 +623,7 @@ class TestRecord < Minitest::Test
 
       assert_false t.c_contiguous?
       assert_false t.f_contiguous?
+      assert_false t.var_contiguous?
     end
   end
 
@@ -361,11 +634,74 @@ class TestRecord < Minitest::Test
     field = NDT.new f
 
     assert_equal t.ndim, 0
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestRecord
+
+class TestUnion < Minitest::Test
+  def test_union_predicates
+    [
+      "[A of int64 | B of bytes]",
+      "[X of string | Y of uint8]"
+    ].each do |s|
+      t = NDT.new s
+      assert_serialize t
+
+      assert_false t.abstract?
+      assert_false t.complex?
+      assert_true t.concrete?
+      assert_false t.float?
+      assert_false t.optional?
+      assert_false t.scalar?
+      assert_false t.signed?
+      assert_false t.unsigned?
+
+      assert_true t.c_contiguous?
+      assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
+    end
+
+    [
+      "[A of Any | B of Complex]",
+      "[X of N * M * T]"
+    ].each do |s|
+      t = NDT.new s
+      assert_serialize t
+
+      assert_true t.abstract?
+      assert_false t.complex?
+      assert_false t.concrete?
+      assert_false t.float?
+      assert_false t.optional?
+      assert_false t.scalar?
+      assert_false t.signed?
+      assert_false t.unsigned?
+
+      assert_false t.c_contiguous?
+      assert_false t.f_contiguous?
+      assert_false t.var_contiguous?
+    end
+  end
+
+  def test_union_common_fields
+    f = "[A of uint64 | B of uint8]"
+    g = "[C of (uint64, uint64) | D of string]"
+    t = NDT.new("[X of #{f} | Y of #{g}]")
+    u = NDT.new("(uint64, uint64)")
+
+    assert_serialize t
+
+    a = NDT.new g
+
+    assert_equal t.ndim, 0
+    assert_equal t.itemsize, u.itemsize + 2
+    assert_equal t.align, 1
+
+    assert_equal t.shape, []
+    assert_equal t.strides, []
+  end
+end # class TestUnion
 
 class TestRef < Minitest::Test
   def test_ref_predicates
@@ -383,7 +719,8 @@ class TestRef < Minitest::Test
       assert_false t.unsigned?
 
       assert_true t.c_contiguous?
-      assert_true t.f_contiguous?     
+      assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
     
     ["&Any", "&(int64, N * M * uint8)"].each do |s|
@@ -401,6 +738,7 @@ class TestRef < Minitest::Test
 
       assert_false t.c_contiguous?
       assert_false t.f_contiguous?
+      assert_false t.var_contiguous?
     end
   end
 
@@ -414,8 +752,8 @@ class TestRef < Minitest::Test
     assert_equal(t.itemsize, SIZEOF_PTR)
     assert_equal(t.align, SIZEOF_PTR)
 
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestRef
 
@@ -436,6 +774,7 @@ class TestConstr < Minitest::Test
 
       assert_true t.c_contiguous?
       assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -446,9 +785,8 @@ class TestConstr < Minitest::Test
     arg = NDT.new a
 
     assert_equal t.ndim, 0
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestConstr
 
@@ -505,6 +843,7 @@ class TestNominal < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contigous?
   end
 
   def test_nominal_common_fields
@@ -514,9 +853,8 @@ class TestNominal < Minitest::Test
     # The opaque type is treated as a dtype with ndim==0, same as
     # for constructor types.
     assert_equal t.ndim, 0
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 
   def test_nominal_exceptions
@@ -544,6 +882,7 @@ class TestScalarKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_scalar_kind_common_fields
@@ -580,7 +919,8 @@ class TestCategorical < Minitest::Test
       assert_false t.unsigned?
 
       assert_true t.c_contiguous?
-      assert_true t.f_contiguous?     
+      assert_true t.f_contiguous?
+      assert_true t.var_contiguous?
     end
   end
 
@@ -589,9 +929,8 @@ class TestCategorical < Minitest::Test
     assert_serialize t
 
     assert_equal t.ndim, 0
-
-#    assert_raises(NoMethodError) { t.shape }
-#    assert_raises(NoMethodError) { t.strides }
+    assert_equal t.shape, []
+    assert_equal t.strides, []
   end
 end # class TestCategorical
 
@@ -611,6 +950,7 @@ class TestFixedStringKind < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
+    assert_false t.var_contiguous?
   end
 
   def test_fixed_string_kind_common_fields
@@ -641,6 +981,7 @@ class TestFixedString < Minitest::Test
 
     assert_true t.c_contiguous?
     assert_true t.f_contiguous?
+    assert_true t.var_contiguous?
   end
 
   def test_fixed_string_common_fields
@@ -655,9 +996,8 @@ class TestFixedString < Minitest::Test
 
       assert_equal t.itemsize, 20 * codepoint_size
       assert_equal t.align, codepoint_size
-
-#      assert_raises(NoMethodError) { t.shape }
-#      assert_raises(NoMethodError) { t.strides }
+      assert_equal t.shape, []
+      assert_equal t.strides, []
     end
   end
 end # class TestFixedString
