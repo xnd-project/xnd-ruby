@@ -3295,12 +3295,12 @@ end # class TestBuffer
 class TestReshape < Minitest::Test
   def test_reshape_api
     x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
-    assert_raises(ValueError) { x.reshape(2**32, 2**32) }
+    assert_raises(RangeError) { x.reshape([2**32, 2**32]) }
   end
 
   def test_reshape_fortran
     x = XND.new([[1,2,3], [4,5,6]], type: "!2 * 3 * float32")
-    y = x.reshape(3, 2, order: 'F')
+    y = x.reshape([3, 2], order: 'F')
     assert_equal y, [[1,5], [4,3], [2,6]]
   end    
 end # class TestReshape

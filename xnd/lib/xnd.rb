@@ -325,6 +325,10 @@ class XND < RubyXND
     super(type, data, device)
   end
 
+  def reshape shape, order: nil
+    _reshape(shape, order)
+  end
+
   class << self
     def empty type, device: nil
       if device

@@ -2072,7 +2072,49 @@ XND_transpose(int argc, VALUE * argv, VALUE self) {
   x.type = t;
 
   return RubyXND_view_move_type(self_p, &x);
-} 
+}
+
+/* XND#_reshape */
+static VALUE
+XND_reshape(VALUE self, VALUE obj_shape, VALUE order)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  int64_t shape[NDT_MAX_DIM];
+  XndObject *self_p;
+  char ord = 'C';
+  size_t n;
+
+  if (order != Qnil) {
+    const char *c = RSTRING_PTR(order);
+    if (strlen(c) != 1) {
+      rb_raise(rb_eValueError, "'order' argument must be a 'C', 'F' or 'A'.");
+    }
+    ord = c[0];
+  }
+
+  Check_Type(obj_shape, T_ARRAY);
+
+  n = RARRAY_LEN(obj_shape);
+  if (n > NDT_MAX_DIM) {
+    rb_raise(rb_eValueError, "too many dimensions.");
+  }
+
+  for (int i = 0; i < n; ++i) {
+    shape[i] = FIX2INT(rb_ary_entry(obj_shape, i));
+    if (shape[i] < 0) {
+      rb_raise(rb_eValueError, "negative dimension size.");
+    }
+  }
+
+  GET_XND(self, self_p);
+  xnd_t view = xnd_reshape(XND(self_p), shape, (int)n, ord, &ctx);
+  if (xnd_err_occurred(&view)) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  return RubyXND_view_move_type(self_p, &view);  
+}
 
 /* XND#copy_contiguous */
 static VALUE
@@ -2433,6 +2475,7 @@ void Init_ruby_xnd(void)
   rb_define_method(cXND, "serialize", XND_serialize, 0);
   rb_define_method(cXND, "copy_contiguous", XND_copy_contiguous, -1);
   rb_define_method(cXND, "transpose", XND_transpose, -1);
+  rb_define_method(cXND, "_reshape", XND_reshape, 2);
   
   //  rb_define_method(cXND, "!=", XND_neq, 1);
   rb_define_method(cXND, "<=>", XND_spaceship, 1);
