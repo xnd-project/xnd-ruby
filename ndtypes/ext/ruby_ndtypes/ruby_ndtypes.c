@@ -120,8 +120,6 @@ static void
 NdtObject_dfree(void * self)
 {
   NdtObject * ndt = (NdtObject*)self;
-
-  ndt_decref(NDT(ndt));
   xfree(ndt);
 }
 
