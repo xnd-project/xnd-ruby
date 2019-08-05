@@ -285,7 +285,7 @@ NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
 
   if (offsets_from_array(&m, offsets) < 0) {
     ndt_meta_clear(&m);
-    set_err(&ctx);
+    seterr(&ctx);
     raise_error();
   }
 
@@ -293,7 +293,7 @@ NDTypes_from_offsets_and_dtype(VALUE self, VALUE offsets, VALUE type)
   ndt_meta_clear(&m);
 
   if (NDT(self_p) == NULL) {
-    set_err(&ctx);
+    seterr(&ctx);
     raise_error();
   }
 

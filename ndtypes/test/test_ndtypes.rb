@@ -359,7 +359,7 @@ class TestVarDim < Minitest::Test
 
     assert_false t.c_contiguous?
     assert_false t.f_contiguous?
-    assert_false t.var_contiguous?
+    assert_true t.var_contiguous?
 
     t = NDT.new "20 * complex128"
     assert t.c_contiguous?
@@ -397,19 +397,13 @@ class TestVarDim < Minitest::Test
 
     # too many dimensions.
     assert_raises(TypeError) { NDT.new("var * " * (MAX_DIM + 1) + "float64") }
-
-    # nested var is disallowed.
-    assert_raises(TypeError) { NDT.new("2 * {a: var * complex128}") }
-    assert_raises(TypeError) { NDT.new("var * {a: var * complex128}") }
-    assert_raises(TypeError) { NDT.new("var * ref(var * string)") }
-    assert_raises(TypeError) { NDT.new("var * SomeConstr(var * string)") }
   end
 
   def test_var_dim_external_offsets
     # Invalid offsets.
-    assert_raises(TypeError) { NDT.new( "int8", [""]) }
-    assert_raises(TypeError) { NDT.new( "int8", [0]) }
-    assert_raises(TypeError) { NDT.new( "int8", [0, 2]) }
+    assert_raises(ValueError) { NDT.new( "int8", [""]) }
+    assert_raises(ValueError) { NDT.new( "int8", [0]) }
+    assert_raises(ValueError) { NDT.new( "int8", [0, 2]) }
     assert_raises(TypeError) { NDT.new( "int8", {}) }
 
     assert_raises(ValueError) { NDT.new( "int8", []) }
@@ -429,9 +423,6 @@ class TestVarDim < Minitest::Test
     # Abstract dtype.
     assert_raises(ValueError) { NDT.new( "N * int8", [[0, 2], [0, 10, 20]]) }
     assert_raises(ValueError) { NDT.new( "var * int8", [[0, 2], [0, 10, 20]]) }
-
-    # Mixing external and internal offsets.
-    assert_raises(TypeError) { NDT.new( "var(offsets=[0,2,10]) * int8", [[0, 1], [0, 2]])}
   end
 end
 
@@ -1535,7 +1526,7 @@ class TestBufferProtocol < Minitest::Test
       ["(2,19)T{<b:a:xxxQ:b:}", 12, 4],
       ["(31,221)T{<b:a:xxxxxxxQ:b:}", 16, 8],
       ["(2,3,10)T{<b:a:xxxxxxxxxxxxxxxQ:b:xxxxxxxx}", 32, 16],
-      ["(2,10)T{=L:a:(2,3)D:b:}", 100, 1]
+      ["(2,10)T{=L:a:(2,3)Zd:b:}", 100, 1]
     ]
 
     test_error_cases = [
@@ -1631,6 +1622,7 @@ class TestBufferProtocol < Minitest::Test
       ['', '@', '=', '<', '>', '!'].each do |modifier|
         f = modifier + fmt
         t = NDT.from_format f
+        
 #        assert_equal t.itemsize, 2 Ruby needs something like Python struct: https://docs.python.org/2/library/struct.html
       end
     end
@@ -1647,13 +1639,12 @@ class TestBufferProtocol < Minitest::Test
     native.each do |fmt|
       ['=', '<', '>', '!'].each do |modifier|
         f = modifier + fmt
-
         assert_raises(ValueError) { NDT.from_format(f) }
       end
     end
 
     # complex64
-    fmt = 'F'
+    fmt = 'Zf'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format f
@@ -1662,7 +1653,7 @@ class TestBufferProtocol < Minitest::Test
     end
 
     # complex128
-    fmt = 'D'
+    fmt = 'Zd'
     ['', '@', '=', '<', '>', '!'].each do |modifier|
       f = modifier + fmt
       t = NDT.from_format(f)
@@ -1711,7 +1702,6 @@ class TestBroadcast < Minitest::Test
       sig, args, kwargs, expected = d.values
       spec = sig.apply(args, out: kwargs)
 
-      puts "#{spec}"
       assert_equal(spec.size, expected.size)
       assert_equal(spec.flags, expected.flags)
       assert_equal(spec.outer_dims, expected.outer_dims)

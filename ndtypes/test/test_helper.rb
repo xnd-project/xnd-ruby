@@ -24,6 +24,19 @@ def assert_true val
 end
 
 # ======================================================================
+#                    Check contiguous fixed dimensions
+# ======================================================================
+
+def c_datasize t
+  datasize = t.itemsize
+  t.shape.each do |v|
+    datasize *= v
+  end
+
+  datasize
+end
+
+# ======================================================================
 #              Check fixed dimensions with arbitary strides
 # ======================================================================
 
