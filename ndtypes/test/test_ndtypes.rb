@@ -1711,6 +1711,7 @@ class TestBroadcast < Minitest::Test
       sig, args, kwargs, expected = d.values
       spec = sig.apply(args, out: kwargs)
 
+      puts "#{spec}"
       assert_equal(spec.size, expected.size)
       assert_equal(spec.flags, expected.flags)
       assert_equal(spec.outer_dims, expected.outer_dims)

@@ -78,7 +78,7 @@ BROADCAST_TEST_CASES = [
     args: [NDT.new("!2 * 3 * uint8")],
     out: nil,
     spec:   NDT::ApplySpec.new(
-      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd',
+      'OptS|C|Fortran|Strided|Xnd',
       2,
       1,
       1,
@@ -104,7 +104,7 @@ BROADCAST_TEST_CASES = [
     args: [NDT.new("2 * 3 * uint8")],
     out: nil,
     spec: NDT::ApplySpec.new(
-      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd' ,
+      'OptZ|OptC|OptS|C|Fortran|Strided|Xnd',
       1,
       1,
       1,

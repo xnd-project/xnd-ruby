@@ -563,7 +563,7 @@ NDTypes_ast(VALUE self)
   }
 
   result = rb_str_new2(cp);
-  ndt_decref(cp);
+  ndt_free(cp);
 
   return result; 
 }
@@ -585,7 +585,7 @@ NDTypes_pretty(VALUE self)
   }
 
   result = rb_str_new2(cp);
-  ndt_decref(cp);
+  ndt_free(cp);
 
   return result;
 }
@@ -627,7 +627,7 @@ NDTypes_strides(VALUE self)
 
 static int
 parse_apply_args(const ndt_t* types[NDT_MAX_ARGS], int *num_intypes, int *num_outtypes,
-                 int *num_args, VALUE input_types) {
+                 int *num_args, VALUE input_types, VALUE out_types) {
   size_t nin, nout;
   if (RARRAY_LEN(input_types) == 0) {
     rb_raise(rb_eArgError, "must specify more than 0 input types.");
@@ -651,8 +651,40 @@ parse_apply_args(const ndt_t* types[NDT_MAX_ARGS], int *num_intypes, int *num_ou
     types[i] = NDT(v_p);
   }
 
-  /* FIXME: since no use case exists, we don't factor specifying out types in the key word args. */
-  nout = 0;
+  if (out_types == Qnil) {
+    nout = 0;
+  }
+  else {
+    if (NDT_CHECK_TYPE(out_types)) {
+      NdtObject *out_p;
+      nout = 1;
+      if (nin + nout > NDT_MAX_ARGS) {
+        rb_raise(rb_eTypeError, "max number of args is %d, got %d.", NDT_MAX_ARGS, nin+nout);
+      }
+      GET_NDT(out_types, out_p);
+      types[nin] = NDT(out_p);
+    }
+    else if (TYPE(out_types) == T_ARRAY) {
+      nout = RARRAY_LEN(out_types);
+      if (nout > NDT_MAX_ARGS || nin+nout > NDT_MAX_ARGS) {
+        rb_raise(rb_eTypeError, "max number of args is %d, got %d.", NDT_MAX_ARGS, nin+nout);
+      }
+
+      for (int i = 0; i < nout; ++i) {
+        NdtObject *v_p;
+        VALUE v = rb_ary_entry(out_types, i);
+        if (!NDT_CHECK_TYPE(v)) {
+          rb_raise(rb_eTypeError, "expected NDT arguments for all out types.");
+        }
+        GET_NDT(v, v_p);
+        types[nin+i] = NDT(v_p);
+      }
+    }
+    else {
+      rb_raise(rb_eTypeError, "'out' argument must be ndt or a tuple of ndt.");
+    }
+  }
+
   for (int i = 0; i < nin+nout; ++i) {
     ndt_incref(types[i]);
   }
@@ -679,13 +711,13 @@ NDTypes_apply(VALUE self, VALUE input_types, VALUE out_types)
 
   Check_Type(input_types, T_ARRAY);
 
-  parse_apply_args(types, &num_intypes, &num_outtypes, &num_args, input_types);
-
+  parse_apply_args(types, &num_intypes, &num_outtypes, &num_args, input_types, out_types);
   GET_NDT(self, self_p);
   const ndt_t * sig = NDT(self_p);
   ret = ndt_typecheck(&spec, sig, types, li, num_intypes, num_outtypes, false,
                       NULL, NULL, &ctx);
   ndt_type_array_clear(types, num_args);
+  
   if (ret < 0) {
     seterr(&ctx);
     raise_error();
