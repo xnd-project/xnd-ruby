@@ -46,6 +46,10 @@ class NDTypes
   def at n,  dtype: nil
     _at(n, dtype)
   end
+
+  def apply in_types, out: nil
+    _apply(in_types, out)
+  end
 end
 
 NDT = NDTypes

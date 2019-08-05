@@ -316,7 +316,7 @@ class TestFortran < Minitest::Test
   end
 
   def test_fortran_at
-    ["2 * 3 *", "0 * 1 * "].each do |dims|
+    ["2 * 3 * ", "0 * 1 * "].each do |dims|
       t = NDT.new("!" + dims + "int8")
 
       u = t.at(0)
@@ -329,7 +329,7 @@ class TestFortran < Minitest::Test
       assert_equal u, NDT.new("int8")
 
       u = t.at(0, dtype: "int64")
-      assert_equal u, NDT.new(dims[4..-1] + "int64")
+      assert_equal u, NDT.new(dims + "int64")
 
       u = t.at(1, dtype: "int64")
       assert_equal u, NDT.new(dims[4..-1] + "int64")
@@ -1518,7 +1518,7 @@ class TestDup < Minitest::Test
       u = t.dup
 
       assert_equal u, t
-      assert_equal u.ast_repr, t.ast_repr
+      assert_equal u.ast, t.ast
     end
   end
 end # class TestDup

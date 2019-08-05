@@ -12,7 +12,6 @@ extern VALUE mNDTypes_GCGuard;
 
 /* typedefs */
 typedef struct NdtObject NdtObject;
-typedef struct ResourceBufferObject ResourceBufferObject;
 
 /* macros */
 #if SIZEOF_LONG == SIZEOF_VOIDP

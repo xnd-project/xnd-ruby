@@ -54,7 +54,7 @@ FileUtils.copy_file File.expand_path(File.join(File.dirname(__FILE__) +
 
 dir_config("ndtypes", [headers], [binaries])
 
-basenames = %w{gc_guard ruby_ndtypes}
+basenames = %w{ruby_ndtypes}
 $objs = basenames.map { |b| "#{b}.o"   }
 $srcs = basenames.map { |b| "#{b}.c" }
 

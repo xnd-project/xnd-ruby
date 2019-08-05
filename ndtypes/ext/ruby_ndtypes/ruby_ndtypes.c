@@ -8,7 +8,6 @@
 /* ---------- Interal declarations ---------- */
 /* data_type_t variables. */
 static const rb_data_type_t NdtObject_type;
-static const rb_data_type_t ResourceBufferObject_type;
 
 /* Class declarations. */
 VALUE cNDTypes;
@@ -667,7 +666,7 @@ parse_apply_args(const ndt_t* types[NDT_MAX_ARGS], int *num_intypes, int *num_ou
 }
 
 static VALUE
-NDTypes_apply(VALUE self, VALUE input_types)
+NDTypes_apply(VALUE self, VALUE input_types, VALUE out_types)
 {
   NDT_STATIC_CONTEXT(ctx);
   const ndt_t *types[NDT_MAX_ARGS] = {NULL};
@@ -713,11 +712,65 @@ NDTypes_apply(VALUE self, VALUE input_types)
                     6, flags, outer_dims, nin, nout, nargs, lst);
 }
 
+static const ndt_t *
+from_string(VALUE v)
+{
+  NDT_STATIC_CONTEXT(ctx);
+  const char *cp;
+  const ndt_t *t;
+
+  Check_Type(v, T_STRING);
+
+  cp = RSTRING_PTR(v);
+  t = ndt_from_string(cp, &ctx);
+  if (t == NULL) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  return t;
+}
+
 /* Implement NDT#_at */
 static VALUE
-NDTypes_at(VALUE self, VALUE n, VALUE dtype)
+NDTypes_at(VALUE self, VALUE obj_n, VALUE dtype)
 {
-  
+  NDT_STATIC_CONTEXT(ctx);
+  int n = FIX2INT(obj_n);
+  VALUE res;
+  const ndt_t *t, *dt;
+  NdtObject *dtype_p, *self_p;
+
+  if (dtype == Qnil) {
+    dt = NULL;
+  }
+  else if (NDT_CHECK_TYPE(dtype)) {
+    GET_NDT(dtype, dtype_p);
+    dt = NDT(dtype_p);
+    ndt_incref(dt);
+  }
+  else if (TYPE(dtype) == T_STRING) {
+    dt = from_string(dtype);
+  }
+  else {
+    rb_raise(rb_eTypeError, "dtype argument must be 'ndt' or 'str'");
+  }
+
+  GET_NDT(self, self_p);
+  t = ndt_copy_contiguous_at(NDT(self_p), n, dt, &ctx);
+
+  if (dt != NULL) {
+    ndt_decref(dt);
+  }
+  if (t == NULL) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  res = rb_ndtypes_from_type(t);
+  ndt_decref(t);
+
+  return res;
 }
 
 /****************************************************************************/
@@ -1011,7 +1064,7 @@ void Init_ruby_ndtypes(void)
   rb_define_method(cNDTypes, "pretty", NDTypes_pretty, 0);
   rb_define_method(cNDTypes, "shape", NDTypes_shape, 0);
   rb_define_method(cNDTypes, "strides", NDTypes_strides, 0);
-  rb_define_method(cNDTypes, "apply", NDTypes_apply, 1);
+  rb_define_method(cNDTypes, "_apply", NDTypes_apply, 2);
   rb_define_method(cNDTypes, "_at", NDTypes_at, 2);
 
   /* Boolean functions */
@@ -1037,8 +1090,5 @@ void Init_ruby_ndtypes(void)
 
   /* Constants */
   rb_define_const(cNDTypes, "MAX_DIM", INT2NUM(NDT_MAX_DIM));
-
-  /* GC guard init */
-  rb_ndtypes_init_gc_guard();
 }
 
