@@ -9,6 +9,21 @@ class TestFunctionHash < Minitest::Test
 end
 
 class TestCall < Minitest::Test
+  class X < XND; end
+  
+  def test_subclass
+    x = XND.new [1,2,3]
+    y = XND.new [1,2,3]
+
+    z = Fn.multiply(x, y)
+    assert_equal z, [1,4,9]
+    assert_equal z.class, XND
+
+    z = Fn.multiply(x, y, cls: X)
+    assert_equal z, [1,4,9]
+    assert_equal z.class, X
+  end
+  
   def test_sin_scalar
     x1 = XND.new(1.2, type: "float64")
     y1 = Fn.sin(x1)
@@ -47,6 +62,18 @@ class TestCall < Minitest::Test
       y = Fn.copy x
 
       assert_array y.value, x.value
+    end
+  end
+
+  def test_copy_slice
+    TEST_CASES.each do |lst, t, dtype|
+      x = XND.new(lst, type: t)
+      next if x.type.ndim < 2
+
+      y = x[0..10, 0..10]
+      z = Fn.copy(y)
+
+      assert_array z.value, y.value
     end
   end
 
@@ -119,7 +146,53 @@ class TestMissingValues < Minitest::Test
 
     assert_equal ans.value, [{'valid' => 2, 'missing' => 1}, {'valid' => 1, 'missing' => 2}]
   end
+
+  def test_unary
+    skip
+  end
+
+  def test_binary
+    skip
+  end
+
+  def test_reduce
+    skip
+  end
+
+  def test_comparisons
+    skip
+  end
+
+  def test_equaln
+    skip
+  end
 end
+
+class TestEqualN < Minitest::Test
+  def test_nan_float
+    skip
+  end
+
+  def test_nan_complex
+    skip
+  end
+
+  def test_nan_float_cuda
+    skip
+  end
+
+  def test_nan_complex_cuda
+    skip
+  end
+end
+
+class TestFlexibleArrays < Minitest::Test
+  def test_sin_var_compatible
+  end
+
+  def test_add
+  end         
+end # class TestFlexibleArrays
 
 class TestRaggedArrays < Minitest::Test
   def test_sin
@@ -222,3 +295,148 @@ class TestPdist < Minitest::Test
     assert_equal y.value, [198.78529349275314, 170.0746899276903, 315.75385646576035]
   end
 end
+
+class TestOut < Minitest::Test
+  def test_api_cpu
+  end
+
+  def test_api_cuda
+  end
+
+  def test_broadcast_cpu
+  end
+
+  def test_broadcast_cuda
+  end
+end
+
+class TestUnaryCPU < Minitest::Test  
+  def test_acos
+    skip
+  end
+
+  def test_acos_opt
+    skip
+  end
+
+  def test_inexact_cast
+    skip
+  end
+end
+
+class TestUnaryCUDA < Minitest::Test
+  def test_cos
+    skip
+  end
+
+  def test_cos_opt
+    skip
+  end
+
+  def test_inexact_cast
+    skip
+  end
+end # class TestUnaryCUDA
+
+class TestBinaryCPU < Minitest::Test
+  def test_binary
+    skip
+  end
+
+  def test_add_opt
+    skip
+  end
+
+  def test_subtract
+    skip
+  end
+
+  def test_multiply
+  end
+end # class TestBinaryCPU
+
+class TestBinaryCUDA < Minitest::Test
+  def test_binary
+    skip
+  end
+
+  def test_add_opt
+    skip
+  end
+
+  def test_subtract
+    skip
+  end
+
+  def test_multiply
+    skip
+  end
+end # class TestBinaryCUDA
+
+class TestBitwiseCPU < Minitest::Test
+  def test_add
+    skip
+  end
+
+  def test_and_opt
+    skip
+  end
+end # class TestBitwiseCPU
+
+class TestBitwiseCUDA < Minitest::Test
+  def test_add
+    skip
+  end
+
+  def test_add_opt
+    skip
+  end
+end # class TestBitwiseCUDA
+
+class TestFunctions < Minitest::Test
+  # FIXME: use some numpy substititute for these tests.
+end # class TestFunctions
+
+class TestCudaManaged < Minitest::Test
+  def test_mixed_functions
+    skip
+  end
+end # class TestCudaManaged
+
+class TestSpec < Minitest::Test
+  # FIXME: figure out this one and implement.
+end # class TestSpec
+
+class LongIndexSliceTest < Minitest::Test
+  def test_subarray
+    skip
+  end
+
+  def test_subarray_cuda
+    skip
+  end
+
+  def test_slices
+    skip
+  end
+
+  def test_slices_cuda
+    skip
+  end
+
+  def test_chained_indices_slices
+    skip
+  end
+
+  def test_mixed_indices_slices
+    skip
+  end
+
+  def test_var_mixed_indices_slices
+    skip
+  end
+
+  def test_slices_brute_force
+    skip
+  end
+end # class LongIndexSliceTest

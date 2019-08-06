@@ -34,6 +34,17 @@
 #ifndef GUMATH_H
 #define GUMATH_H
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+  #include <cstdint>
+#else
+  #include <stdint.h>
+#endif
+
 #include "ndtypes.h"
 #include "xnd.h"
 
@@ -65,7 +76,8 @@
 #endif
 
 
-#define GM_MAX_KERNELS 512
+#define GM_MAX_KERNELS 8192
+#define GM_THREAD_CUTOFF 1000000
 
 typedef float float32_t;
 typedef double float64_t;
@@ -74,15 +86,25 @@ typedef double float64_t;
 typedef int (* gm_xnd_kernel_t)(xnd_t stack[], ndt_context_t *ctx);
 typedef int (* gm_strided_kernel_t)(char **args, intptr_t *dimensions, intptr_t *steps, void *data);
 
-/* Collection of specialized kernels for a single function signature. */
+/*
+ * Collection of specialized kernels for a single function signature.
+ *
+ * NOTE: The specialized kernel lookup scheme is transitional and may
+ * be replaced by something else.
+ *
+ * This should be considered as a first version of a kernel request
+ * protocol.
+ */
 typedef struct {
-    ndt_t *sig;
+    const ndt_t *sig;
     const ndt_constraint_t *constraint;
 
     /* Xnd signatures */
-    gm_xnd_kernel_t Opt;     /* dispatch ensures elementwise, at least 1D, contiguous in last dimensions */
-    gm_xnd_kernel_t C;       /* dispatch ensures c-contiguous in inner dimensions */
-    gm_xnd_kernel_t Fortran; /* dispatch ensures f-contiguous in inner dimensions */
+    gm_xnd_kernel_t OptC;    /* C in inner+1 dimensions */
+    gm_xnd_kernel_t OptZ;    /* C in inner dimensions, C or zero stride in (inner+1)th. */
+    gm_xnd_kernel_t OptS;    /* strided in (inner+1)th. */
+    gm_xnd_kernel_t C;       /* C in inner dimensions */
+    gm_xnd_kernel_t Fortran; /* Fortran in inner dimensions */
     gm_xnd_kernel_t Xnd;     /* selected if non-contiguous or the other fields are NULL */
 
     /* NumPy signature */
@@ -99,11 +121,17 @@ typedef struct {
     const char *name;
     const char *sig;
     const ndt_constraint_t *constraint;
+    uint32_t cap;
 
-    gm_xnd_kernel_t Opt;
+    /* Xnd signatures */
+    gm_xnd_kernel_t OptC;
+    gm_xnd_kernel_t OptZ;
+    gm_xnd_kernel_t OptS;
     gm_xnd_kernel_t C;
     gm_xnd_kernel_t Fortran;
     gm_xnd_kernel_t Xnd;
+
+    /* NumPy signature */
     gm_strided_kernel_t Strided;
 } gm_kernel_init_t;
 
@@ -115,7 +143,10 @@ typedef struct {
 
 /* Multimethod with associated kernels */
 typedef struct gm_func gm_func_t;
-typedef const gm_kernel_set_t *(*gm_typecheck_t)(ndt_apply_spec_t *spec, const gm_func_t *f, const ndt_t *in[], int nin, ndt_context_t *ctx);
+typedef const gm_kernel_set_t *(*gm_typecheck_t)(ndt_apply_spec_t *spec, const gm_func_t *f,
+                                                 const ndt_t *in[], const int64_t li[],
+                                                 int nin, int nout, bool check_broadcast,
+                                                 ndt_context_t *ctx);
 struct gm_func {
     char *name;
     gm_typecheck_t typecheck; /* Experimental optimized type-checking, may be NULL. */
@@ -139,10 +170,10 @@ GM_API int gm_add_kernel(gm_tbl_t *tbl, const gm_kernel_init_t *kernel, ndt_cont
 GM_API int gm_add_kernel_typecheck(gm_tbl_t *tbl, const gm_kernel_init_t *kernel, ndt_context_t *ctx, gm_typecheck_t f);
 
 GM_API gm_kernel_t gm_select(ndt_apply_spec_t *spec, const gm_tbl_t *tbl, const char *name,
-                             const ndt_t *in_types[], int nin, const xnd_t args[],
-                             ndt_context_t *ctx);
+                             const ndt_t *types[], const int64_t li[], int nin, int nout,
+                             bool check_broadcast, const xnd_t args[], ndt_context_t *ctx);
 GM_API int gm_apply(const gm_kernel_t *kernel, xnd_t stack[], int outer_dims, ndt_context_t *ctx);
-GM_API int gm_apply_thread(const gm_kernel_t *kernel, xnd_t stack[], int outer_dims, uint32_t flags, const int64_t nthreads, ndt_context_t *ctx);
+GM_API int gm_apply_thread(const gm_kernel_t *kernel, xnd_t stack[], int outer_dims, const int64_t nthreads, ndt_context_t *ctx);
 
 
 /******************************************************************************/
@@ -171,6 +202,7 @@ GM_API int gm_np_map(const gm_strided_kernel_t f,
 /*                                  Xnd loops                                 */
 /******************************************************************************/
 
+GM_API int array_shape_check(xnd_t *x, const int64_t shape, ndt_context_t *ctx);
 GM_API int gm_xnd_map(const gm_xnd_kernel_t f, xnd_t stack[], const int nargs,
                       const int outer_dims, ndt_context_t *ctx);
 
@@ -191,15 +223,24 @@ GM_API int gm_tbl_map(const gm_tbl_t *tbl, int (*f)(const gm_func_t *, void *sta
 /******************************************************************************/
 
 GM_API void gm_init(void);
-GM_API int gm_init_unary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
-GM_API int gm_init_binary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+GM_API int gm_init_cpu_unary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+GM_API int gm_init_cpu_binary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+GM_API int gm_init_bitwise_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+
+GM_API int gm_init_cuda_unary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+GM_API int gm_init_cuda_binary_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
+
 GM_API int gm_init_example_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
-GM_API int gm_init_bfloat16_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
 GM_API int gm_init_graph_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
 GM_API int gm_init_quaternion_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
 GM_API int gm_init_pdist_kernels(gm_tbl_t *tbl, ndt_context_t *ctx);
 
 GM_API void gm_finalize(void);
+
+
+#ifdef __cplusplus
+} /* END extern "C" */
+#endif
 
 
 #endif /* GUMATH_H */

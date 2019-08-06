@@ -69,3 +69,6 @@ xnd/ext/ruby_xnd/lib/
 .vscode/
 xnd/ext/ruby_xnd/GPATH
 xnd/lib/ruby_xnd.so
+gumath/lib/ruby_gumath.so
+gumath/ext/ruby_gumath/lib/libgumath.so*
+*.a
