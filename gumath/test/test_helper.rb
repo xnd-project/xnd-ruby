@@ -3,6 +3,7 @@ require 'gumath'
 
 require 'minitest/autorun'
 
+Gm = Gumath
 Fn = Gumath::Functions
 Ex = Gumath::Examples
 

@@ -148,19 +148,113 @@ class TestMissingValues < Minitest::Test
   end
 
   def test_unary
-    skip
+    a = [0, nil, 2]
+    ans = XND.new([a.map{ |x| x.nil? ? nil : Math.sin(x)])
+
+    x = XND.new(a, dtype: "?float64")
+    y = Fn.sin(x)
+
+    assert_equal y.value, ans
   end
 
   def test_binary
-    skip
+    a = [3, nil, 3]
+    b = [100, 1, nil]
+    ans = XND.new([
+      a.zip(b).map {|t0, t1| t0.nil? && t1.nil? ? nil : t0 * t1 }
+    ])
+    
+    x = XND.new a, dtype: "?float64"
+    y = Fn.sin(x)
+
+    assert_equal y.value, ans
   end
 
   def test_reduce
+    a = [1, nil, 2]
+    x = XND.new a
+
+    y = Gm.reduce Fn, :add, x
+    assert_equal y, nil
+
+    y = Gm.reduce Fn, :multiply, x
+    assert_equal y, nil
+
+    y = Gm.reduce Fn, :subtract, x
+    assert_equal y, nil
+
+    x = XND.new [], dtype: "?int32"
+    y = Gm.reduce Fn, :add, x
+    assert_equal y, 0
+  end
+
+  def test_reduce_cuda
     skip
+    a = [1,nil,2]
+    x = XND.new a, device: "cuda:managed"
+
+    y = Gm.reduce Cd, :add, x
+    assert_equal y, nil
+
+    y = Gm.reduce Cd, :multiply, x
+    assert_equal y, nil
+
+    x = XND.new [], dtype: "?int32", device: "cuda:managed"
+    y = Gm.reduce Fn, :add, x
+    assert_equal y, 0
   end
 
   def test_comparisons
+    a = [1, nil, 3, 5]
+    b = [2, nil, 3, 4]
+
+    x = XND.new a
+    y = XND.new b
+
+    ans = Fn.equal x, y
+    assert_equal ans.value, [false, nil, true, false]
+
+    ans = Fn.not_equal x, y
+    assert_equal ans.value, [true, nil, false, true]
+
+    ans = Fn.less x, y
+    assert_equal ans.value, [true, nil, false, false]
+
+    ans = Fn.less_equal x, y
+    assert_equal ans.value, [true, nil, true, false]
+
+    ans = Fn.greater_equal x, y
+    assert_equal ans.value, [false, nil, true, true]
+
+    ans = Fn.greater x, y
+    assert_equal ans.value, [false, nil, false, true]
+  end
+
+  def test_comparisons_cuda
     skip
+    a = [1, nil, 3, 5]
+    b = [2, nil, 3, 4]
+
+    x = XND.new a, device: "cuda:managed"
+    y = XND.new b, device: "cuda:managed"
+
+    ans = Fn.equal x, y
+    assert_equal ans.value, [false, nil, true, false]
+
+    ans = Fn.not_equal x, y
+    assert_equal ans.value, [true, nil, false, true]
+
+    ans = Fn.less x, y
+    assert_equal ans.value, [true, nil, false, false]
+
+    ans = Fn.less_equal x, y
+    assert_equal ans.value, [true, nil, true, false]
+
+    ans = Fn.greater_equal x, y
+    assert_equal ans.value, [false, nil, true, true]
+
+    ans = Fn.greater x, y
+    assert_equal ans.value, [false, nil, false, true]
   end
 
   def test_equaln
