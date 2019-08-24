@@ -276,7 +276,42 @@ class Tfloat
 end # class Tfloat
 
 class Tcomplex
-  # TODO
+  attr_accessor :type, :min, :max, :exp, :all
+
+  def initialize type
+    raise(ValueError, "not a complex type.") unless tcomplex.include?(type)
+    @type = type
+    @min, @max, @exp = tinfo[type]
+    @all = [@type, @min, @max, @exp]
+  end
+
+  def to_s
+    @type
+  end
+
+  def == other
+    other.is_a?(Tint) && @all == other.all
+  end
+
+  def testcases
+
+  end
+
+  def cpu_noimpl f=nil
+
+  end
+
+  def cpu_nokern f=nil
+
+  end
+
+  def cuda_noimpl f=nil
+
+  end
+
+  def cuda_nokern f=nil
+
+  end
 end # class Tcomplex
 
 tinfo_default = [
@@ -311,22 +346,45 @@ tinfo_bitwise = [
 
 implemented_sigs = {
   "unary" => {
-    
+    "default" => {}, "float_result" => {}
   },
   "binary" => {
-
+    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
   },
   "binary_mv" => {
+    "default" => {
+      [Tint.new("uint8"),Tint.new("uint8")] => [Tint.new("uint8"), Tint.new("uint8")],
+      [Tint.new("uint16"),Tint.new("uint16")] => [Tint.new("uint16"),Tint.new("uint16")],
+      [Tint.new("uint32"),Tint.new("uint32")] => [Tint.new("uint32"),Tint.new("uint32")],
+      [Tint.new("uint64"),Tint.new("uint64")] => [Tint.new("uint64"),Tint.new("uint64")],
 
+      [Tint.new("int8"),Tint.new("int8")] => [Tint.new("int8"),Tint.new("int8")],
+      [Tint.new("int16"),Tint.new("int16")] => [Tint.new("int16"),Tint.new("int16")],
+      [Tint.new("int32"),Tint.new("int32")] => [Tint.new("int32"),Tint.new("int32")],
+      [Tint.new("int64"),Tint.new("int64")] => [Tint.new("int64"),Tint.new("int64")],
+
+      [Tfloat.new("float32"),Tfloat.new("float32")] => [Tfloat.new("float32"), Tfloat.new("float32")],
+      [Tfloat.new("float64"),Tfloat.new("float64")] => [Tfloat.new("float64"), Tfloat.new("float64")]
+    }
   }
 }
 
 exact_sigs = {
-
+  "unary" => {
+    "default" => {}, "float_result" => {}
+  },
+  "binary" => {
+    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {} 
+  }
 }
 
 inexact_sigs = {
-
+  "unary" => {
+    "default" => {}, "float_result" => {}
+  },
+  "binary" => {
+    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
+  }
 }
 
 def init_unary_cast pattern, tinfo, rank

@@ -659,67 +659,295 @@ end # class TestUnaryCUDA
 class TestBinaryCPU < Minitest::Test
   def test_binary
     implemented_sigs["binary"]["default"].each do |t, u|
-      w = implemented_sigs["binary"]["default"][]
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,2,3,4,5,6,7], dtype: t.type
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type
+      z = Fn.add x, y
+
+      assert_equal z, [1,3,5,7,9,11,13,15]
     end
   end
 
   def test_add_opt
-    skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,nil,3,4,5,6,7], dtype: "?"+t.type
+      y = XND.new [1,2,3,4,5,6,nil,8], dtype: "?"+u.type
+      z = Fn.add x, y
+
+      assert_equal z, [1,3,nil,7,9,11,nil,15]
+    end
   end
 
   def test_subtract
-    skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [2,3,4,5,6,7,8,9], dtype: t.type
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type
+      z = Fn.subtract x, y
+
+      assert_equal z, [1,1,1,1,1,1,1,1]
+    end
   end
 
   def test_multiply
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [2,3,4,5,6,7,8,9], dtype: t.type
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type
+
+      z = Fn.multiply x, y
+
+      assert_equal z, [2,6,12,20,30,42,56,72]
+    end
   end
 end # class TestBinaryCPU
 
 class TestBinaryCUDA < Minitest::Test
   def test_binary
     skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,2,3,4,5,6,7], dtype: t.type, device: "cuda:managed"
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type, device: "cuda:managed"
+      z = Fn.add x, y
+
+      assert_equal z, [1,3,5,7,9,11,13,15]
+    end
   end
 
   def test_add_opt
     skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,nil,3,4,5,6,7], dtype: "?"+t.type, device: "cuda:managed"
+      y = XND.new [1,2,3,4,5,6,nil,8], dtype: "?"+u.type, device: "cuda:managed"
+      z = Fn.add x, y
+
+      assert_equal z, [1,3,nil,7,9,11,nil,15]
+    end
   end
 
   def test_subtract
     skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [2,3,4,5,6,7,8,9], dtype: t.type, device: "cuda:managed"
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type, device: "cuda:managed"
+      z = Fn.subtract x, y
+
+      assert_equal z, [1,1,1,1,1,1,1,1]
+    end
   end
 
   def test_multiply
     skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [2,3,4,5,6,7,8,9], dtype: t.type, device: "cuda:managed"
+      y = XND.new [1,2,3,4,5,6,7,8], dtype: u.type, device: "cuda:managed"
+
+      z = Fn.multiply x, y
+
+      assert_equal z, [2,6,12,20,30,42,56,72]
+    end
   end
 end # class TestBinaryCUDA
 
 class TestBitwiseCPU < Minitest::Test
   def test_add
-    skip
+    implemented_sigs["binary"]["bitwise"].each do |t, u|
+      w = implemented_sigs["binary"]["bitwise"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,0,1,1,1,1,0], dtype: t.type
+      y = XND.new [1,0,0,0,1,1,1,1], dtype: u.type
+      z = Fn.bitwise_and x, y
+
+      assert_equal z, [0,0,0,0,1,1,1,0]
+    end
   end
 
   def test_and_opt
-    skip
+    implemented_sigs["binary"]["bitwise"].each do |t, u|
+      w = implemented_sigs["binary"]["bitwise"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      a = [0,1,nil,1,1,1,1,0]
+      b = [1,1,1,1,1,1,nil,0]
+      c = [0,1,nil,1,1,1,nil,0]
+
+      x = XND.new a, dtype: "?"+t.type
+      y = XND.new b, dtype: "?"+u.type
+      z = Fn.bitwise_and x, y
+
+      assert_equal z, c
+    end   
   end
 end # class TestBitwiseCPU
 
 class TestBitwiseCUDA < Minitest::Test
   def test_add
     skip
+    implemented_sigs["binary"]["bitwise"].each do |t, u|
+      w = implemented_sigs["binary"]["bitwise"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      x = XND.new [0,1,0,1,1,1,1,0], dtype: t.type, device: "cuda:managed"
+      y = XND.new [1,0,0,0,1,1,1,1], dtype: u.type, device: "cuda:managed"
+      z = Fn.bitwise_and x, y
+
+      assert_equal z, [0,0,0,0,1,1,1,0]
+    end
   end
 
   def test_add_opt
     skip
+    implemented_sigs["binary"]["bitwise"].each do |t, u|
+      w = implemented_sigs["binary"]["bitwise"][[t,u]]
+      next if t.cpu_noimpl || u.cpu_noimpl
+
+      a = [0,1,nil,1,1,1,1,0]
+      b = [1,1,1,1,1,1,nil,0]
+      c = [0,1,nil,1,1,1,nil,0]
+
+      x = XND.new a, dtype: "?"+t.type, device: "cuda:managed"
+      y = XND.new b, dtype: "?"+u.type, device: "cuda:managed"
+      z = Fn.bitwise_and x, y
+
+      assert_equal z, c
+    end
   end
 end # class TestBitwiseCUDA
 
 class TestFunctions < Minitest::Test
   # FIXME: use some numpy substititute for these tests.
+  def assert_rel_error_less calc, expected, maxerr, msg
+
+  end
+
+  def equal calc, expected, msg
+
+  end
+
+  def assert_equal func, z1, z2, w, msg, a=nil, b=nil
+
+  end
+
+  def create_xnd a, t, dev=nil
+
+  end
+
+  def check_unary_not_implemented func, a, t, mod=Fn, dev=nil
+
+  end
+
+  def check_unary_type_error func, a, t, mod=Fn, dev=nil
+
+  end
+
+  def check_unary func, a, t, u, mod=Fn, dev=nil
+
+  end
+
+  def check_binary_not_implemented func, a, t, b, u, mod=Fn, dev=nil
+
+  end
+
+  def check_binary_type_error func, a, t, b, u, mod=Fn, dev=nil
+
+  end
+
+  def check_binary func, a, t, b, u, w, mod=Fn, dev=nil
+
+  end
+
+  def check_binary_mv func, a, t, b, u, v, w, mod=Fn, devl=nil
+
+  end
+
+  def test_unary_cpu
+
+  end
+
+  def test_binary_cpu
+
+  end
+
+  def test_binary_mv_cpu
+
+  end
+
+  def test_unary_cpu
+
+  end
+
+  def test_binary_cuda
+
+  end
+
+  def test_binary_mv_cuda
+
+  end
+
+  def test_divide_inexact_cpu
+
+  end
+
+  def test_divide_inexact_cuda
+
+  end
+
+  def test_divmod_type_error_cpu
+
+  end
+
+  def test_divmod_type_error_cuda
+
+  end
 end # class TestFunctions
 
 class TestCudaManaged < Minitest::Test
   def test_mixed_functions
     skip
+    x = XND.new [1,2,3]
+    y = XND.new [1,2,3]
+
+    a = XND.new [1,2,3], device: "cuda:managed"
+    b = XND.new [1,2,3], device: "cuda:managed"
+
+    x = Fn.multiply x, y
+    c = Cd.multiply a, b
+    assert_equal z, c
+
+    z = Fn.multiply a, b
+    assert_equal z, c
+
+    z = Fn.multiply x,b
+    assert_equal z, c
+
+    z = Fn.multiply a, y
+    assert_equal z, c
+
+    assert_raises(ValueError) { Cd.multiply(x, y) }
+    assert_raises(ValueError) { Cd.multiply(x, b) }
+    assert_raises(ValueError) { Cd.multiply(a, y) }
   end
 end # class TestCudaManaged
 
