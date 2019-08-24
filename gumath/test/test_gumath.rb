@@ -258,33 +258,148 @@ class TestMissingValues < Minitest::Test
   end
 
   def test_equaln
-    skip
+    a = [1, nil, 3, 5]
+    b = [2, nil, 3, 4]
   end
 end
 
 class TestEqualN < Minitest::Test
   def test_nan_float
-    skip
+    ["bfloat16", "float32", "float64"].each do |dtype|
+      x = XND.new [0, Float::NAN, 2], dtype: dtype
+
+      y = XND.new [0, Float::NAN, 2], dtype: dtype
+      z = Fn.equaln x, y
+
+      y = XND.new [0,1,2], dtype: dtype
+      z = Fn.equaln x, y
+
+      assert_equal z, [true, false, true]
+    end
   end
 
   def test_nan_complex
-    skip
+    ["complex64", "complex128"].each do |dtype|
+      [
+        [Complex(Float::NAN, 1.2), Complex(Float::NAN, 1.2), true],
+        [Complex(Float::NAN, 1.2), Complex(Float::NAN, 1), false],
+        [Complex(Float::NAN, Float::NAN), Complex(Float::NAN, 1.2), false],
+
+        [Complex(1.2, Float::NAN), Complex(1.2, Float::NAN), true],
+        [Complex(1.2, Float::NAN), Complex(1, Float::NAN), false],
+        [Complex(Float::NAN, Float::NAN), Complex(1.2, Float::NAN), false],
+
+        [Complex(Float::NAN, Float::NAN), Complex(Float::NAN, Float::NAN), true]
+      ].each do |a, b, ans|
+        x = XND.new [0,a,2], dtype: dtype
+        y = XND.new [0,b,2], dtype: dtype
+        z = Fn.equaln x, y
+
+        assert_equal z, [true, ans, true]
+      end
+    end
   end
 
   def test_nan_float_cuda
     skip
+    ["bfloat16", "float16", "float32", "float64"].each do |dtype|
+      x = XND.new [0,Float::NAN, 2], dtype: dtype, device: "cuda:managed"
+      
+      y = XND.new [0,Float::NAN, 2], dtype: dtype, device: "cuda:managed"
+      z = Cd.equaln x, y
+      assert_equal z, [true, true, true]
+
+      y = XND.new [0,1,2], dtype: dtype, device: "cuda:managed"
+      z = Cd.equaln x, y
+      assert_equal z, [true, false, true]
+    end
   end
 
   def test_nan_complex_cuda
     skip
+    ["complex64", "complex128"].each do |dtype|
+      [
+        [Complex(Float::NAN, 1.2), Complex(Float::NAN, 1.2), true],
+        [Complex(Float::NAN, 1.2), Complex(Float::NAN, 1), false],
+        [Complex(Float::NAN, Float::NAN), Complex(Float::NAN, 1.2), false],
+
+        [Complex(1.2, Float::NAN), Complex(1.2, Float::NAN), true],
+        [Complex(1.2, Float::NAN), Complex(1, Float::NAN), false],
+        [Complex(Float::NAN, Float::NAN), Complex(1.2, Float::NAN), false],
+
+        [Complex(Float::NAN, Float::NAN), Complex(Float::NAN, Float::NAN), true] 
+      ].each do |a, b, ans|
+        x = XND.new [0,a,2], dtype: dtype, device: "cuda:managed"
+        y = XND.new [0,b,2], dtype: dtype, device: "cuda:managed"
+        z = Cd.equaln x, y
+        assert_equal z, [true, ans, true]
+      end
+    end
   end
-end
+end # class TestEqualN
 
 class TestFlexibleArrays < Minitest::Test
   def test_sin_var_compatible
+    lst = [
+      [
+        [1.0],
+        [2.0, 3.0],
+        [4.0, 5.0, 6.0]
+      ],
+      [
+        [7.0],
+        [8.0, 9.0],
+        [10.0, 11.0, 12.0]
+      ]]
+
+    ans = [
+      [
+        [Math.sin(1.0)],
+        [Math.sin(2.0), Math.sin(3.0)],
+        [Math.sin(4.0), Math.sin(5.0), Math.sin(6.0)]
+      ],
+      [
+        [Math.sin(7.0)],
+        [Math.sin(8.0), Math.sin(9.0)],
+        [Math.sin(10.0), Math.sin(11.0), Math.sin(12.0)]
+      ]
+    ]
+    
+    x = XND.new lst, type: "array * array * array * float64"
+    y = Fn.sin x
+    assert_equal y.value, ans
   end
 
   def test_add
+    a = [
+      [[1.0],
+      [2.0, 3.0],
+      [4.0, 5.0, 6.0]],
+      [[7.0],
+      [8.0, 9.0],
+      [10.0, 11.0, 12.0]]
+    ]
+
+    b = [[[2.0],
+      [3.0, 4.0],
+      [5.0, 6.0, 7.0]],
+      [[-8.0],
+      [-9.0, -10.0],
+      [111.1, 121.2, 25.3]]
+    ]
+
+    ans = [[[1.0+2.0],
+      [2.0+3.0, 3.0+4.0],
+      [4.0+5.0, 5.0+6.0, 6.0+7.0]],
+      [[7.0-8.0],
+      [8.0-9.0, 9.0-10.0],
+      [10.0+111.1, 11.0+121.2, 12.0+25.3]]
+    ]
+
+    x = XND.new a, type: "array * array * array * float64"
+    y = XND.new b, type: "array * array * array * float64"
+    z = Fn.add x, y
+    assert_equal z.value, ans
   end         
 end # class TestFlexibleArrays
 
@@ -392,49 +507,160 @@ end
 
 class TestOut < Minitest::Test
   def test_api_cpu
+    # negative
+    x = XND.new [1,2,3]
+    y = XND.empty "3 * int64"
+    z = Fn.negative x, out: y
+
+    assert_equal z.object_id, y.object_id
+    assert_equal y, XND.new([-1, -2, -3])
+
+    # divmod
+    x = XND.new [10, 20, 30]
+    y = XND.new [7,8,9]
+    a = XND.empty "3 * int64"
+    b = XND.empty "3 * int64"
+    q, r = Fn.divmod x, y, out: [a, b]
+
+    assert_equal q.object_id, a.object_id
+    assert_equal r.object_id, b.object_id
+
+    assert_equal q, XND.new([1,2,3])
+    assert_equal r, XND.new([3,4,3])
   end
 
   def test_api_cuda
+    skip
+    x = XND.new [1,2,3], device: "cuda:managed"
+    y = XND.empty "3 * int64", device: "cuda:managed"
+    z = Cd.negative x, out: y
+
+    assert_equal z.object_id, y.object_id
+    assert_equal y, XND.new([-1,-2,-3])
+
+    # divmod
+    x = XND.new [10, 20, 30], device: "cuda:managed"
+    y = XND.new [7,8,9], device: "cuda:managed"
+    a = XND.empty "3 * int64", device: "cuda:managed"
+    b = XND.empty "3 * int64", device: "cuda:managed"
+    q, r = Fn.divmod x, y, out: [a, b]
+
+    assert_equal q.object_id, a.object_id
+    assert_equal r.object_id, b.object_id
+
+    assert_equal q, XND.new([1,2,3])
+    assert_equal r, XND.new([3,4,3])    
   end
 
   def test_broadcast_cpu
+    # multiply
+    x = XND.new [1,2,3]
+    y = XND.new [2]
+    z = XND.empty "3 * int64"
+    ans = Fn.multiply x, y, out: z
+
+    assert_equal ans.object_id, z.object_id
+    assert_equal ans, XND.new([2,4,6])
+
+    x = XND.new [1,2,3]
+    y = XND.new 2
+    z = XND.empty "3 * int64"
+    ans = Fn.multiply x, y, out: z
+
+    assert_equal ans.object_id, z.object_id
+    assert_equal ans, XND.new([2,4,6])
+
+    # divmod
+    x = XND.new [10,20,30]
+    y = XND.new [3]
+    a = XND.empty "3 * int64"
+    b = XND.empty "3 * int64"
+    q, r = Fn.divmod x, y, out: [a,b]
+
+    assert_equal q.object_id, a.object_id
+    assert_equal r.object_id, b.object_id
+    assert_equal q, XND.new([3,6,10])
+    assert_equal r, XND.new([1,2,0])
   end
 
   def test_broadcast_cuda
+    skip
+    x = XND.new [1,2,3], device: "cuda:managed"
+    y = XND.new [2], device: "cuda:managed"
+    z = XND.empty "3 * int64", device: "cuda:managed"
+    ans = Fn.mutiply x, y, out: z
+
+    assert_equal ans.object_id, z.object_id
+    assert_equal ans, XND.new([2,4,6])
   end
-end
+end # class TestOut
 
 class TestUnaryCPU < Minitest::Test  
   def test_acos
-    skip
+    a = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7] 
+    b = a.map{ |x| Math.acos(x) }
+
+    x = XND.new a, dtype: "float64"
+    y = Fn.acos x
+
+    assert_equal y, b
   end
 
   def test_acos_opt
-    skip
+    a = [0, 0.1, 0.2, nil, 0.4, 0.5, 0.6, nil]
+    b = a.map { |x| x.nil? ? nil : Math.acos(x) }
+
+    x = XND.new a, dtype: "?float64"
+    y = Fn.acos x
+
+    assert_equal y, b
   end
 
   def test_inexact_cast
-    skip
+    a = [0,1,2,3,4,5,6,7]
+    x = XND.new a, dtype: "int64"
+
+    assert_raises(ValueError) { Fn.sin(x) }
   end
-end
+end # class TestUnaryCPU
 
 class TestUnaryCUDA < Minitest::Test
   def test_cos
     skip
+    a = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7] 
+    b = a.map{ |x| Math.cos(x) }
+
+    x = XND.new a, dtype: "float64", device: "cuda:managed"
+    y = Fn.cos x
+
+    assert_equal y, b
   end
 
   def test_cos_opt
     skip
+    a = [0, 0.1, 0.2, nil, 0.4, 0.5, 0.6, nil]
+    b = a.map { |x| x.nil? ? nil : Math.cos(x) }
+
+    x = XND.new a, dtype: "?float64", device: "cuda:managed"
+    y = Fn.cos x
+
+    assert_equal y, b
   end
 
   def test_inexact_cast
     skip
+    a = [0,1,2,3,4,5,6,7]
+    x = XND.new a, dtype: "int64", device: "cuda:managed"
+
+    assert_raises(ValueError) { Fn.sin(x) }
   end
 end # class TestUnaryCUDA
 
 class TestBinaryCPU < Minitest::Test
   def test_binary
-    skip
+    implemented_sigs["binary"]["default"].each do |t, u|
+      w = implemented_sigs["binary"]["default"][]
+    end
   end
 
   def test_add_opt
