@@ -149,7 +149,7 @@ class TestMissingValues < Minitest::Test
 
   def test_unary
     a = [0, nil, 2]
-    ans = XND.new([a.map{ |x| x.nil? ? nil : Math.sin(x)])
+    ans = XND.new([a.map { |x| x.nil? ? nil : Math.sin(x) }])
 
     x = XND.new(a, dtype: "?float64")
     y = Fn.sin(x)
@@ -839,87 +839,87 @@ end # class TestBitwiseCUDA
 class TestFunctions < Minitest::Test
   # FIXME: use some numpy substititute for these tests.
   def assert_rel_error_less calc, expected, maxerr, msg
-
+    skip
   end
 
   def equal calc, expected, msg
-
+    skip
   end
 
   def assert_equal func, z1, z2, w, msg, a=nil, b=nil
-
+    skip
   end
 
   def create_xnd a, t, dev=nil
-
+    skip
   end
 
   def check_unary_not_implemented func, a, t, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_unary_type_error func, a, t, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_unary func, a, t, u, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_binary_not_implemented func, a, t, b, u, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_binary_type_error func, a, t, b, u, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_binary func, a, t, b, u, w, mod=Fn, dev=nil
-
+    skip
   end
 
   def check_binary_mv func, a, t, b, u, v, w, mod=Fn, devl=nil
-
+    skip
   end
 
   def test_unary_cpu
-
+    skip
   end
 
   def test_binary_cpu
-
+    skip
   end
 
   def test_binary_mv_cpu
-
+    skip
   end
 
   def test_unary_cpu
-
+    skip
   end
 
   def test_binary_cuda
-
+    skip
   end
 
   def test_binary_mv_cuda
-
+    skip
   end
 
   def test_divide_inexact_cpu
-
+    skip
   end
 
   def test_divide_inexact_cuda
-
+    skip
   end
 
   def test_divmod_type_error_cpu
-
+    skip
   end
 
   def test_divmod_type_error_cuda
-
+    skip
   end
 end # class TestFunctions
 

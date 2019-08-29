@@ -240,10 +240,21 @@ end
 
 functions = {
   "unary" => {
-    # TODO
+    "default" => ["copy", "abs"],
+    "arith" => ["negative"],
+    "complex_math_with_half" => ["exp", "log", "log10", "sqrt", "sin", "cos"],
+    "complex_math" => ["tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
+                        "asinh", "acosh", "atanh"],
+    "real_math_with_half" => ["fabs", "exp2", "log2"],
+    "real_math" => ["expm1", "log1p", "logb", "cbrt", "erf", "erfc", "lgamma",
+                    "tgamma", "ceil", "floor", "trunc", "round", "nearbyint"],
+    "bitwise" => ["invert"]
   },
   "binary" => {
-    # TODO
+    "default" => ["add", "subtract", "multiply", "floor_divide", "remainder", "power"],
+    "float_result" => ["divide"],
+    "bool_result" => ["less_equal", "less", "greater_equal", "greater", "equal", "not_equal"],
+    "bitwise" => ["bitwise_and", "bitwise_or", "bitwise_xor"]
   },
   "binary_mv" => {
     "default" => ["divmod"]
@@ -251,37 +262,48 @@ functions = {
 }
 
 def complex_noimpl n
-  # TODO
+  functions["unary"]["real_math"].include?(n) ||
+  functions["unary"]["real_math_with_half"].include?(n)
 end
 
 def half_noimpl n
-  # TODO
+  functions["unary"]["real_math"].include?(n) ||
+  functions["unary"]["complex_math"].include?(n) ||
+  ["floor_divide", "remainder"].include?(n)
 end
 
-tunsigned = ["bool", "uint8", "uint16", "uint32", "uint64"]
-tsigned = ["int8", "int16", "int32", "int64"]
-tfloat = ["bfloat16", "float16", "float32", "float64"]
-tcomplex = ["complex32", "complex64", "complex128"]
+TUNSIGNED = ["bool", "uint8", "uint16", "uint32", "uint64"]
+TSIGNED = ["int8", "int16", "int32", "int64"]
+TFLOAT = ["bfloat16", "float16", "float32", "float64"]
+TCOMPLEX = ["complex32", "complex64", "complex128"]
 
-tinfo = {
-  # TODO
+TINFO = {
+  "bool" => [0,1,0],
+  "uint8" => [0, 2**8-1, 0],
+  "uint16" => [0, 2**16-1, 0],
+  "uint32" => [0, 2**32-1, 0],
+  "uint64" => [0, 2**64-1, 0],
+  "int8" => [-2**7, 2**7-1, 0],
+  "int16" => [-2**15, 2**15-1, 0],
+  "int32" => [-2**31, 2**31-1, 0],
+  "int64" => [-2**63, 2**63-1, 0],
+  "float16"  => [-2**11, 2**11, 15],
+  "bfloat16" => [-2**8, 2**8, 127],
+  "float32"  => [-2**24, 2**24, 127],
+  "float64"  => [-2**53, 2**53, 1023],
+  "complex32"=> [-2**11, 2**11, 15],
+  "complex64"=> [-2**24, 2**24, 127],
+  "complex128" => [-2**53, 2**53, 1023]
 }
 
 class Tint
-  # TODO
-end # class TInt
-
-class Tfloat
-  # TODO
-end # class Tfloat
-
-class Tcomplex
   attr_accessor :type, :min, :max, :exp, :all
 
   def initialize type
-    raise(ValueError, "not a complex type.") unless tcomplex.include?(type)
+    raise(ValueError, "not an integer type #{type}") unless 
+      (TUNSIGNED + TSIGNED).include?(type)
     @type = type
-    @min, @max, @exp = tinfo[type]
+    @min, @max, @exp = TINFO[type]
     @all = [@type, @min, @max, @exp]
   end
 
@@ -294,23 +316,130 @@ class Tcomplex
   end
 
   def testcases
-
+    yield 0
+    yield @min
+    yield @max
+    (1..10).each do |i|
+      yield rand(@min, @max+1)
+    end
   end
 
   def cpu_noimpl f=nil
-
+    false
   end
 
   def cpu_nokern f=nil
-
+    false
   end
 
   def cuda_noimpl f=nil
-
+    false
   end
 
   def cuda_nokern f=nil
+    false
+  end
+end # class TInt
 
+class Tfloat
+  attr_accessor :type, :min, :max, :exp, :all
+
+  def initialize type
+    raise(ValueError, "not a float type.") unless TFLOAT.include?(type)
+    @type = type
+    @min, @max, @exp = TINFO[type]
+    @all = [@type, @min, @max, @exp]
+  end
+
+  def to_s
+    @type
+  end
+
+  def == other
+    other.is_a?(Tint) && @all == other.all
+  end
+
+  def testcases
+    yield 0
+    yield 0.5
+    yield -0.5
+    yield @min
+    yield @max
+    prec = rand(1..10)
+  end
+
+  def cpu_noimpl f=nil
+    @type == "float16"
+  end
+
+  def cpu_nokern f=nil
+    false
+  end
+
+  def cuda_noimpl f=nil
+    if @type == "float16"
+      return half_noimpl(f)
+    end
+  end
+
+  def cuda_nokern f=nil
+    false
+  end
+end # class Tfloat
+
+class Tcomplex
+  attr_accessor :type, :min, :max, :exp, :all
+
+  def initialize type
+    raise(ValueError, "not a complex type.") unless TCOMPLEX.include?(type)
+    @type = type
+    @min, @max, @exp = TINFO[type]
+    @all = [@type, @min, @max, @exp]
+  end
+
+  def to_s
+    @type
+  end
+
+  def == other
+    other.is_a?(Tint) && @all == other.all
+  end
+
+  def testcases
+    if block_given?
+      yield 0
+      yield 0.5
+      yield -0.5
+      yield @min
+      yield @max
+      prec = rand(1..10)
+      # all_binary(prex, @exp, 1).each do |v, w|
+      #   yield Complex(Float(v), Float(w))
+      # end
+      # bin_ranfloat.each do |v, w|
+      #   yield Complex(Float(v), Float(w))
+      # end
+    end
+  end
+
+  def cpu_noimpl f=nil
+    if @type == "complex32"
+      return true
+    end
+    return complex_noimpl(f)
+  end
+
+  def cpu_nokern f=nil
+    ["floor_divide", "remainder"].include?(f)
+  end
+
+  def cuda_noimpl f=nil
+    return true if @type == "complex32"
+    return complex_noimpl(f)
+  end
+
+  def cuda_nokern f=nil
+    return ["floor_divide", "remainder"].include?(f)
   end
 end # class Tcomplex
 
