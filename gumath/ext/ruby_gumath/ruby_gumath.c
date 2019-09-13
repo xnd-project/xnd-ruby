@@ -86,29 +86,29 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
   }
   
   /* parse keyword arguments. */
-  for (int i = 0; i < argc; ++i) {
-    if (RB_TYPE_P(argv[i], T_HASH)) {
-      opts = argv[i];
-      break;
-    }
-  }
-  out = rb_hash_aref(opts, rb_intern("out"));
-  dt = rb_hash_aref(opts, rb_intern("dtype"));
-  cls = rb_hash_aref(opts, rb_intern("cls"));
-  if (NIL_P(cls)) {
-    cls = cXND;
-  }
-  if (!NIL_P(dt)) {
-    if (!NIL_P(out)) {
-      rb_raise(rb_eArgError, "the 'out' and 'dtype' arguments are mutually exclusive.");
-    }
+  /* for (int i = 0; i < argc; ++i) { */
+  /*   if (RB_TYPE_P(argv[i], T_HASH)) { */
+  /*     opts = argv[i]; */
+  /*     break; */
+  /*   } */
+  /* } */
+  /* out = rb_hash_aref(opts, rb_intern("out")); */
+  /* dt = rb_hash_aref(opts, rb_intern("dtype")); */
+  /* cls = rb_hash_aref(opts, rb_intern("cls")); */
+  /* if (NIL_P(cls)) { */
+  /*   cls = cXND; */
+  /* } */
+  /* if (!NIL_P(dt)) { */
+  /*   if (!NIL_P(out)) { */
+  /*     rb_raise(rb_eArgError, "the 'out' and 'dtype' arguments are mutually exclusive."); */
+  /*   } */
 
-    if (!rb_ndtypes_check_type(dt)) {
-      rb_raise(rb_eArgError, "'dtype' argument must be an NDT object.");
-    }
-    dtype = (ndt_t *)rb_ndtypes_const_ndt(dt);
-    ndt_incref(dtype);
-  }
+  /*   if (!rb_ndtypes_check_type(dt)) { */
+  /*     rb_raise(rb_eArgError, "'dtype' argument must be an NDT object."); */
+  /*   } */
+  /*   dtype = (ndt_t *)rb_ndtypes_const_ndt(dt); */
+  /*   ndt_incref(dtype); */
+  /* } */
 }
 
 /****************************************************************************/

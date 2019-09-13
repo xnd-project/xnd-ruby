@@ -42,4 +42,9 @@
 #include "ruby_gumath.h"
 #include "util.h"
 
+void Init_gumath_functions(void);
+void Init_gumath_examples(void);
+
+VALUE seterr(ndt_context_t *ctx);
+
 #endif  /* RUBY_GUMATH_INTERNAL_H */

@@ -73,3 +73,6 @@ xnd/lib/ruby_xnd.so
 gumath/lib/ruby_gumath.so
 gumath/ext/ruby_gumath/lib/libgumath.so*
 gumath/ext/ruby_gumath/lib/libgumath.a
+ndtypes/ext/ruby_ndtypes/lib/libndtypes.a
+ndtypes/ext/ruby_ndtypes/lib/libndtypes.so*
+
