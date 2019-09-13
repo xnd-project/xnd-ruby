@@ -346,5 +346,19 @@ class XND < RubyXND
     _transpose(permute)
   end
 
+  def inspect
+    str = "#<XND:#{object_id}>\n"
+    str += "\t type= " + self.type.to_s
+    str += "\t value= \n"
+    str += self.short_value(10)
+    str += "\n"
+    
+    str
+  end
+
+  def to_s
+    short_value(10).to_s
+  end
+
   alias :to_a :value
 end # class XND

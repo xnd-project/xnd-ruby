@@ -12,8 +12,8 @@ class TestCall < Minitest::Test
   class X < XND; end
   
   def test_subclass
-    x = XND.new [1,2,3]
-    y = XND.new [1,2,3]
+    x = X.new [1,2,3]
+    y = X.new [1,2,3]
 
     z = Fn.multiply(x, y)
     assert_equal z, [1,4,9]

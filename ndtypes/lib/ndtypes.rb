@@ -50,6 +50,12 @@ class NDTypes
   def apply in_types, out: nil
     _apply(in_types, out)
   end
+
+  def inspect
+    str = "#<NDTypes:#{object_id}>\n"
+    str += "\t" + to_s
+    str
+  end
 end
 
 NDT = NDTypes

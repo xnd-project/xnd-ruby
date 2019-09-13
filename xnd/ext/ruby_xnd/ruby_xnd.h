@@ -54,6 +54,7 @@ extern "C" {
   VALUE rb_xnd_from_xnd(xnd_t *x);
   
   typedef struct XndObject XndObject;
+  extern VALUE cXND;
 
 #ifdef __cplusplus
 }

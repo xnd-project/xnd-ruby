@@ -42,6 +42,13 @@ static int initialized = 0;
 /****************************************************************************/
 /*                              Singleton methods                           */
 /****************************************************************************/
+/* Gumath::GumathFunctions::method_missing
+ *
+ * The method_missing gets called on the module when a user invokes Fn.f_name
+ * where f_name is the name of a method. We then perform a lookup in the hash
+ * representing the method names and lambdas and then use the 'call' method
+ * for calling the lambda.
+ */
 static VALUE
 mGumath_Functions_s_method_missing(int argc, VALUE *argv, VALUE module)
 {
@@ -51,6 +58,7 @@ mGumath_Functions_s_method_missing(int argc, VALUE *argv, VALUE module)
   int is_present = RTEST(gumath_method);
   
   if (is_present) {
+/* pass argc-1 since the first argument is the name of the method in method_missing. */
     rb_funcall2(gumath_method, rb_intern("call"), argc-1, &argv[1]);
   }
   else {

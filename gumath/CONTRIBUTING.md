@@ -4,7 +4,8 @@
 
 Gumath is a wrapper over libgumath. The docs for libgumath can be found [here](https://xnd.readthedocs.io/en/latest/libgumath/index.html).
 
-It allows users to write [multiple dispatch](https://en.wikipedia.org/wiki/Multiple_dispatch) functions for XND containers. 
+It allows users to write [multiple dispatch](https://en.wikipedia.org/wiki/Multiple_dispatch) 
+functions for XND containers. 
 Multiple dispatch can be thought of as the concept behind function overloading in
 languages like C++. However the major difference is that the function call is made
 according to the run time types of the arguments in case of multiple dispatch whereas
@@ -44,7 +45,7 @@ return the result given by the gumath kernel.
 
 Another approach is to have a Hash of methods and their corresponding implementations
 stored inside each module. Whenever a method is called on the module, it will routed to
-the method_missing in the class, which will lookup the hash and call the appropriate
+the `method_missing` in the class, which will lookup the hash and call the appropriate
 lambda. This seems like the better approach since the user no longer needs to know that
 the functions that they're calling inside the module are in fact lambdas.
 

@@ -59,114 +59,55 @@ seterr(ndt_context_t *ctx)
 /*                               Instance methods                           */
 /****************************************************************************/
 
+/* Implement call method on the GufuncObject call. */
 static VALUE
 Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
 {
+  VALUE out = Qnil;
+  VALUE dt = Qnil;
+  VALUE cls = Qnil;
+  
   NDT_STATIC_CONTEXT(ctx);
+  VALUE result[NDT_MAX_ARGS], opts;
   xnd_t stack[NDT_MAX_ARGS];
-  const ndt_t *in_types[NDT_MAX_ARGS];
+  const ndt_t *types[NDT_MAX_ARGS];
   gm_kernel_t kernel;
   ndt_apply_spec_t spec = ndt_apply_spec_empty;
+  int64_t li[NDT_MAX_ARGS];
   GufuncObject *self_p;
-  VALUE result[NDT_MAX_ARGS];
-  int i, k;
-  size_t nin = argc;
+  NdtObject *dt_p;
+  int k;
+  ndt_t *dtype = NULL;
+  size_t nin = argc, nout, nargs;
+  bool have_cpu_device = false;
 
   if (argc > NDT_MAX_ARGS) {
     rb_raise(rb_eArgError, "too many arguments.");
   }
-
-  /* Prepare arguments for sending into gumath function. */
-  for (i = 0; i < argc; i++) {
-    if (!rb_xnd_check_type(argv[i])) {
-      VALUE str = rb_funcall(argv[i], rb_intern("inspect"), 0, NULL);
-      rb_raise(rb_eArgError, "Args must be XND. Received %s.", RSTRING_PTR(str));
-    }
-
-    stack[i] = *rb_xnd_const_xnd(argv[i]);
-    in_types[i] = stack[i].type;
-  }
-
-  /* Select the gumath function to be called from the function table. */
-  GET_GUOBJ(self, self_p);
-
-  kernel = gm_select(&spec, self_p->table, self_p->name, in_types, argc, stack, &ctx);
-  if (kernel.set == NULL) {
-    seterr(&ctx);
-    raise_error();
-  }
-
-  if (spec.nbroadcast > 0) {
-    for (i = 0; i < argc; i++) {
-      stack[i].type = spec.broadcast[i];
+  
+  /* parse keyword arguments. */
+  for (int i = 0; i < argc; ++i) {
+    if (RB_TYPE_P(argv[i], T_HASH)) {
+      opts = argv[i];
+      break;
     }
   }
-
-  /* Populate output values with empty XND objects. */
-  for (i = 0; i < spec.nout; i++) {
-    if (ndt_is_concrete(spec.out[i])) {
-      VALUE x = rb_xnd_empty_from_type(spec.out[i]);
-      if (x == NULL) {
-        ndt_apply_spec_clear(&spec);
-        rb_raise(rb_eNoMemError, "could not allocate empty XND object.");
-      }
-      result[i] = x;
-      stack[nin+i] = *rb_xnd_const_xnd(x);
+  out = rb_hash_aref(opts, rb_intern("out"));
+  dt = rb_hash_aref(opts, rb_intern("dtype"));
+  cls = rb_hash_aref(opts, rb_intern("cls"));
+  if (NIL_P(cls)) {
+    cls = cXND;
+  }
+  if (!NIL_P(dt)) {
+    if (!NIL_P(out)) {
+      rb_raise(rb_eArgError, "the 'out' and 'dtype' arguments are mutually exclusive.");
     }
-    else {
-      result[i] = NULL;
-      stack[nin+i] = xnd_error;
-    }
-  }
 
-  /* Actually call the kernel function with prepared input and output args. */
-#ifdef HAVE_PTHREAD_H
-  if (gm_apply_thread(&kernel, stack, spec.outer_dims, spec.flags,
-                      max_threads, &ctx) < 0) {
-    seterr(&ctx);
-    raise_error();
-  }
-#else
-  if (gm_apply(&kernel, stack, spec.outer_dims, &ctx) < 0) {
-    seterr(&ctx);
-    raise_error();
-  }
-#endif
-
-  /* Prepare output XND objects. */
-  for (i = 0; i < spec.nout; i++) {
-    if (ndt_is_abstract(spec.out[i])) {
-      ndt_del(spec.out[i]);
-      VALUE x = rb_xnd_from_xnd(&stack[nin+i]);
-      stack[nin+i] = xnd_error;
-      if (x == NULL) {
-        for (k = i+i; k < spec.nout; k++) {
-          if (ndt_is_abstract(spec.out[k])) {
-            xnd_del_buffer(&stack[nin+k], XND_OWN_ALL);
-          }
-        }
-      }
-      result[i] = x;
+    if (!rb_ndtypes_check_type(dt)) {
+      rb_raise(rb_eArgError, "'dtype' argument must be an NDT object.");
     }
-  }
-
-  if (spec.nbroadcast > 0) {
-    for (i = 0; i < nin; ++i) {
-      ndt_del(spec.broadcast[i]);
-    }
-  }
-
-  /* Return result */
-  switch(spec.nout) {
-  case 0: return Qnil;
-  case 1: return result[0];
-  default: {
-    VALUE tuple = array_new(spec.nout);
-    for (i = 0; i < spec.nout; ++i) {
-      rb_ary_store(tuple, i, result[i]);
-    }
-    return tuple;
-  }
+    dtype = (ndt_t *)rb_ndtypes_const_ndt(dt);
+    ndt_incref(dtype);
   }
 }
 

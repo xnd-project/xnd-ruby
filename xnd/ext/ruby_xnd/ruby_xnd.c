@@ -35,6 +35,7 @@
  */
 
 #include "ruby_xnd_internal.h"
+#include "ruby_xnd.h"
 #include "xnd.h"
 
 #define XND_CHECK_NUMERIC(obj) Check_Type(obj, T_FIXNUM); \
