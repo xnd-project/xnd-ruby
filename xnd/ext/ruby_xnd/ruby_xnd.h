@@ -52,6 +52,9 @@ extern "C" {
   const xnd_t * rb_xnd_const_xnd(VALUE xnd);
   VALUE rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags);
   VALUE rb_xnd_from_xnd(xnd_t *x);
+  XndObject * rb_xnd_get_xnd_object(VALUE obj);
+  MemoryBlockObject * rb_xnd_get_mblock_object(VALUE mblock);
+  int rb_xnd_is_cuda_mananged(VALUE xnd);
   
   typedef struct XndObject XndObject;
   extern VALUE cXND;

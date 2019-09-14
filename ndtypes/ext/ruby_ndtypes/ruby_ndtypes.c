@@ -953,13 +953,10 @@ NdtObject *
 rb_ndtypes_get_ndt_object(VALUE obj)
 {
   NdtObject *ndt_p;
-
   if (!NDT_CHECK_TYPE(obj)) {
     /* raise error */
   }
-  
   GET_NDT(obj, ndt_p);
-
   return ndt_p;
 }
 

@@ -45,4 +45,13 @@ int ndt_exists(void);
 /* Raise an error stored in $!. Clears it before raising. */
 void raise_error(void);
 
+int rb_is_a(VALUE obj, VALUE klass);
+
+int rb_klass_has_ancestor(VALUE klass, VALUE ancestor);
+
+int rb_ary_size(VALUE array);
+
+void rb_puts(VALUE v);
+
+
 #endif  /* GUMATH_UTIL_H */

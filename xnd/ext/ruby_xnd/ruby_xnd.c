@@ -2410,6 +2410,34 @@ rb_xnd_get_type(void)
   
 }
 
+XndObject *
+rb_xnd_get_xnd_object(VALUE obj)
+{
+  XndObject *xnd_p;
+  GET_XND(obj, xnd_p);
+  return xnd_p;
+}
+
+MemoryBlockObject *
+rb_xnd_get_mblock_object(VALUE mblock)
+{
+  MemoryBlockObject *mblock_p;
+  GET_MBLOCK(mblock, mblock_p);
+  return mblock_p;
+}
+
+int
+rb_xnd_is_cuda_managed(VALUE xnd)
+{
+  XndObject *xnd_p;
+  MemoryBlockObject *mblock_p;
+
+  GET_XND(xnd, xnd_p);
+  GET_MBLOCK(xnd_p->mblock, mblock_p);
+
+  return (mblock_p->xnd->flags & XND_CUDA_MANAGED);
+}
+
 /*
  * This function handles two common view cases:
  *

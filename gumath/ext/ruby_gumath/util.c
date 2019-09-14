@@ -66,3 +66,37 @@ raise_error(void)
   rb_set_errinfo(Qnil);
   rb_exc_raise(exeception);
 }
+
+/* Checks whether a given Ruby object is of a type using is_a? */
+int
+rb_is_a(VALUE obj, VALUE klass)
+{
+  return RTEST(rb_funcall(obj, rb_intern("is_a?"), 1, klass));
+}
+
+int
+rb_klass_has_ancestor(VALUE klass, VALUE ancestor)
+{
+  return RTEST(
+               rb_funcall(
+                          rb_funcall(klass, rb_intern("ancestors"),0,NULL),
+                          rb_intern("include?"),
+                          1,
+                          ancestor));
+}
+
+int
+rb_ary_size(VALUE array)
+{
+  Check_Type(array, T_ARRAY);
+  return FIX2INT(rb_funcall(array, rb_intern("size"), 0, NULL));
+}
+
+void
+rb_puts(VALUE v) {
+  ID sym_puts = rb_intern("puts");
+  ID sym_inspect = rb_intern("inspect");
+  rb_funcall(rb_mKernel, sym_puts, 1,
+             rb_funcall(v, sym_inspect, 0));
+}
+

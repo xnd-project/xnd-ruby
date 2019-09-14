@@ -59,6 +59,66 @@ seterr(ndt_context_t *ctx)
 /*                               Instance methods                           */
 /****************************************************************************/
 
+/* Parse optional arguments passed to GuFuncObject#call. 
+ *
+ * Populates the rbstack with all the input arguments. Then checks whether
+ * the 'out' kwarg has been specified and populates the rest of rbstack
+ * with contents of 'out'.
+ */
+void
+parse_args(VALUE *rbstack, int *rb_nin, int *rb_nout, int *rb_nargs, int noptargs,
+           VALUE *argv, VALUE out)
+{
+  size_t nin = noptargs, nout;
+
+  if (noptargs == 0) {
+    *rb_nin = 0;
+  }
+  
+  for (int i = 0; i < nin; i++) {
+    if (!rb_is_a(argv[i], cXND)) {
+      rb_raise(rb_eArgError, "expected xnd arguments.");
+    }
+    rbstack[i] = argv[i];
+  }
+
+  if (out == Qnil) {
+    nout = 0;
+  }
+  else {
+    if (rb_xnd_check_type(out)) {
+      nout = 1;
+      if (nin + nout > NDT_MAX_ARGS) {
+        rb_raise(rb_eTypeError, "max number of arguments is %d, got %ld.",
+                 NDT_MAX_ARGS, nin+nout);
+      }
+      rbstack[nin] = out;
+    }
+    else if (RB_TYPE_P(out, T_ARRAY)) {
+      nout = rb_ary_size(out);
+      if (nout > NDT_MAX_ARGS || nin+nout > NDT_MAX_ARGS) {
+        rb_raise(rb_eTypeError, "max number of arguments is %d, got %ld.",
+                 NDT_MAX_ARGS, nin+nout);
+      }
+
+      for (int i = 0; i < nout; ++i) {
+        VALUE v = rb_ary_entry(out, i);
+        if (!rb_is_a(v, cXND)) {
+          rb_raise(rb_eTypeError, "expected xnd argument in all elements of out array.");
+        }
+        rbstack[nin+i] = v;
+      }
+    }
+    else {
+      rb_raise(rb_eTypeError, "'out' argument must of type XND or Array of XND objects.");
+    }
+  }
+
+  *rb_nin = (int)nin;
+  *rb_nout = (int)nout;
+  *rb_nargs = (int)nin + (int)nout;
+}
+
 /* Implement call method on the GufuncObject call. */
 static VALUE
 Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
@@ -68,7 +128,7 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
   VALUE cls = Qnil;
   
   NDT_STATIC_CONTEXT(ctx);
-  VALUE result[NDT_MAX_ARGS], opts;
+  VALUE rbstack[NDT_MAX_ARGS], opts = Qnil;
   xnd_t stack[NDT_MAX_ARGS];
   const ndt_t *types[NDT_MAX_ARGS];
   gm_kernel_t kernel;
@@ -78,7 +138,7 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
   NdtObject *dt_p;
   int k;
   ndt_t *dtype = NULL;
-  size_t nin = argc, nout, nargs;
+  int nin = argc, nout, nargs;
   bool have_cpu_device = false;
 
   if (argc > NDT_MAX_ARGS) {
@@ -86,30 +146,48 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
   }
   
   /* parse keyword arguments. */
-  /* for (int i = 0; i < argc; ++i) { */
-  /*   if (RB_TYPE_P(argv[i], T_HASH)) { */
-  /*     opts = argv[i]; */
-  /*     break; */
-  /*   } */
-  /* } */
-  /* out = rb_hash_aref(opts, rb_intern("out")); */
-  /* dt = rb_hash_aref(opts, rb_intern("dtype")); */
-  /* cls = rb_hash_aref(opts, rb_intern("cls")); */
-  /* if (NIL_P(cls)) { */
-  /*   cls = cXND; */
-  /* } */
-  /* if (!NIL_P(dt)) { */
-  /*   if (!NIL_P(out)) { */
-  /*     rb_raise(rb_eArgError, "the 'out' and 'dtype' arguments are mutually exclusive."); */
-  /*   } */
+  int noptargs = argc;
+  for (int i = 0; i < argc; ++i) {
+    if (RB_TYPE_P(argv[i], T_HASH)) {
+      noptargs = i;
+      opts = argv[i];
+      break;
+    }
+  }
+  
+  if (NIL_P(opts)) { opts = rb_hash_new(); }
+  
+  out = rb_hash_aref(opts, ID2SYM(rb_intern("out")));
+  dt = rb_hash_aref(opts, ID2SYM(rb_intern("dtype")));
+  cls = rb_hash_aref(opts, ID2SYM(rb_intern("cls")));
 
-  /*   if (!rb_ndtypes_check_type(dt)) { */
-  /*     rb_raise(rb_eArgError, "'dtype' argument must be an NDT object."); */
-  /*   } */
-  /*   dtype = (ndt_t *)rb_ndtypes_const_ndt(dt); */
-  /*   ndt_incref(dtype); */
-  /* } */
+  if (NIL_P(cls)) { cls = cXND; }
+  if (!NIL_P(dt)) {
+    if (!NIL_P(out)) {
+      rb_raise(rb_eArgError, "the 'out' and 'dtype' arguments are mutually exclusive.");
+    }
+
+    if (!rb_ndtypes_check_type(dt)) {
+      rb_raise(rb_eArgError, "'dtype' argument must be an NDT object.");
+    }
+    dtype = (ndt_t *)rb_ndtypes_const_ndt(dt);
+    ndt_incref(dtype);
+  }
+
+  if (!rb_klass_has_ancestor(cls, cXND)) {
+    rb_raise(rb_eTypeError, "the 'cls' argument must be a subtype of 'xnd'.");
+  }
+
+  /* parse leading optional arguments */
+  parse_args(rbstack, &nin, &nout, &nargs, noptargs, argv, out);
+
+  for (k = 0; k < nargs; ++k) {
+    if (!rb_xnd_is_cuda_managed(rbstack[k])) {
+      
+    }
+  }
 }
+
 
 /****************************************************************************/
 /*                               Singleton methods                          */

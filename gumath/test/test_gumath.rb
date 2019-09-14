@@ -15,13 +15,15 @@ class TestCall < Minitest::Test
     x = X.new [1,2,3]
     y = X.new [1,2,3]
 
+    puts x.inspect
+
     z = Fn.multiply(x, y)
     assert_equal [1,4,9], z
     assert_equal XND, z.class
 
     # z = Fn.multiply(x, y, cls: X)
-    # assert_equal z, [1,4,9]
-    # assert_equal z.class, X
+    # assert_equal [1,4,9], z
+    # assert_equal X, z.class
   end
   
   def test_sin_scalar

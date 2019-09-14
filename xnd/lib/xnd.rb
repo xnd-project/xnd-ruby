@@ -348,9 +348,9 @@ class XND < RubyXND
 
   def inspect
     str = "#<XND:#{object_id}>\n"
-    str += "\t type= " + self.type.to_s
+    str += "\t type= " + self.type.to_s + "\n"
     str += "\t value= \n"
-    str += self.short_value(10)
+    str += self.short_value(10).to_s
     str += "\n"
     
     str
