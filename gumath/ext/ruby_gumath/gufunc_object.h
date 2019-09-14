@@ -33,9 +33,14 @@
 
 #include "ruby_gumath_internal.h"
 
+#define GM_CPU_FUNC  0x0001U
+#define GM_CUDA_MANAGED_FUNC 0x0002U
+
 typedef struct {
   const gm_tbl_t *table;          /* kernel table */
   char *name;                     /* function name */
+  uint32_t flags;                 /* memory target */
+  VALUE identity;                 /* identity element */
 } GufuncObject;
 
 extern const rb_data_type_t GufuncObject_type;

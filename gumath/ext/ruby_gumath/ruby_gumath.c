@@ -183,8 +183,16 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
 
   for (k = 0; k < nargs; ++k) {
     if (!rb_xnd_is_cuda_managed(rbstack[k])) {
-      
+      have_cpu_device = true;
     }
+
+    stack[k] = *rb_xnd_const_xnd(rbstack[k]);
+    types[k] = stack[k].type;
+    li[k] = stack[k].index;
+  }
+
+  if (have_cpu_device) {
+    
   }
 }
 

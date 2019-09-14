@@ -55,6 +55,10 @@ of type `GufuncObject`. This `GufuncObject` will have a method `call` defined on
 will be called by the `method_missing` when that object is called. The only extra overhead
 will be that of a Hash lookup (O(1) time) and calling an Ruby method `call`.
 
+Since each `GufuncObject` instance has various parameters like identification of CPU vs.
+CUDA functions defined on it, the `call` method is able to differentiate between types
+of kernels that are stored within an object and raise relevant errors whereever necessary.
+
 ## Calling gumath kernels
 
 Gumath kernels can be called by using the `gm_apply` function and passing a pointer to

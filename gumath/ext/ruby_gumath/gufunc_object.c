@@ -38,11 +38,17 @@
 VALUE cGumath_GufuncObject;
 
 static void
+GufuncObject_dmark(void *self)
+{
+  GufuncObject *guobj = (GufuncObject*)self;
+  rb_gc_mark(guobj->identity);
+}
+
+static void
 GufuncObject_dfree(void *self)
 {
   GufuncObject *guobj = (GufuncObject*)self;
-
-  ndt_free(guobj->name);
+  ndt_free(guobj->name);        /* ndt_free because we use ndt_strdup in _alloc. */
 }
 
 static size_t
@@ -54,7 +60,7 @@ GufuncObject_dsize(const void *self)
 const rb_data_type_t GufuncObject_type = {
   .wrap_struct_name = "GufuncObject",
   .function = {
-    .dmark = NULL,
+    .dmark = GufuncObject_dmark,
     .dfree = GufuncObject_dfree,
     .dsize = GufuncObject_dsize,
     .reserved = {0,0},
