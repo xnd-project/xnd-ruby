@@ -443,78 +443,90 @@ class Tcomplex
   end
 end # class Tcomplex
 
-tinfo_default = [
-  Tint.new("uint8"),
-  Tint.new("uint16"),
-  Tint.new("uint32"),
-  Tint.new("uint64"),
-  Tint.new("int8"),
-  Tint.new("int16"),
-  Tint.new("int32"),
-  Tint.new("int64"),
-  Tfloat.new("float16"),
-  Tfloat.new("bfloat16"),
-  Tfloat.new("float32"),
-  Tfloat.new("float64"),
-  Tcomplex.new("complex32"),
-  Tcomplex.new("complex64"),
-  Tcomplex.new("complex128")
-]
+def tinfo_default
+  [
+    Tint.new("uint8"),
+    Tint.new("uint16"),
+    Tint.new("uint32"),
+    Tint.new("uint64"),
+    Tint.new("int8"),
+    Tint.new("int16"),
+    Tint.new("int32"),
+    Tint.new("int64"),
+    Tfloat.new("float16"),
+    Tfloat.new("bfloat16"),
+    Tfloat.new("float32"),
+    Tfloat.new("float64"),
+    Tcomplex.new("complex32"),
+    Tcomplex.new("complex64"),
+    Tcomplex.new("complex128")
+  ]
+end
 
-tinfo_bitwise = [
-  Tint.new("bool"),
-  Tint.new("uint8"),
-  Tint.new("uint16"),
-  Tint.new("uint32"),
-  Tint.new("uint64"),
-  Tint.new("int8"),
-  Tint.new("int16"),
-  Tint.new("int32"),
-  Tint.new("int64")
-]
+def tinfo_bitwise
+  [
+    Tint.new("bool"),
+    Tint.new("uint8"),
+    Tint.new("uint16"),
+    Tint.new("uint32"),
+    Tint.new("uint64"),
+    Tint.new("int8"),
+    Tint.new("int16"),
+    Tint.new("int32"),
+    Tint.new("int64")
+  ]  
+end
 
-implemented_sigs = {
-  "unary" => {
-    "default" => {}, "float_result" => {}
-  },
-  "binary" => {
-    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
-  },
-  "binary_mv" => {
-    "default" => {
-      [Tint.new("uint8"),Tint.new("uint8")] => [Tint.new("uint8"), Tint.new("uint8")],
-      [Tint.new("uint16"),Tint.new("uint16")] => [Tint.new("uint16"),Tint.new("uint16")],
-      [Tint.new("uint32"),Tint.new("uint32")] => [Tint.new("uint32"),Tint.new("uint32")],
-      [Tint.new("uint64"),Tint.new("uint64")] => [Tint.new("uint64"),Tint.new("uint64")],
+def implemented_sigs
+  {
+    "unary" => {
+      "default" => {}, "float_result" => {}
+    },
+    "binary" => {
+      "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
+    },
+    "binary_mv" => {
+      "default" => {
+        [Tint.new("uint8"),Tint.new("uint8")] => [Tint.new("uint8"), Tint.new("uint8")],
+        [Tint.new("uint16"),Tint.new("uint16")] => [Tint.new("uint16"),Tint.new("uint16")],
+        [Tint.new("uint32"),Tint.new("uint32")] => [Tint.new("uint32"),Tint.new("uint32")],
+        [Tint.new("uint64"),Tint.new("uint64")] => [Tint.new("uint64"),Tint.new("uint64")],
 
-      [Tint.new("int8"),Tint.new("int8")] => [Tint.new("int8"),Tint.new("int8")],
-      [Tint.new("int16"),Tint.new("int16")] => [Tint.new("int16"),Tint.new("int16")],
-      [Tint.new("int32"),Tint.new("int32")] => [Tint.new("int32"),Tint.new("int32")],
-      [Tint.new("int64"),Tint.new("int64")] => [Tint.new("int64"),Tint.new("int64")],
+        [Tint.new("int8"),Tint.new("int8")] => [Tint.new("int8"),Tint.new("int8")],
+        [Tint.new("int16"),Tint.new("int16")] => [Tint.new("int16"),Tint.new("int16")],
+        [Tint.new("int32"),Tint.new("int32")] => [Tint.new("int32"),Tint.new("int32")],
+        [Tint.new("int64"),Tint.new("int64")] => [Tint.new("int64"),Tint.new("int64")],
 
-      [Tfloat.new("float32"),Tfloat.new("float32")] => [Tfloat.new("float32"), Tfloat.new("float32")],
-      [Tfloat.new("float64"),Tfloat.new("float64")] => [Tfloat.new("float64"), Tfloat.new("float64")]
+        [Tfloat.new("float32"),Tfloat.new("float32")] => [Tfloat.new("float32"),
+          Tfloat.new("float32")],
+        [Tfloat.new("float64"),Tfloat.new("float64")] => [Tfloat.new("float64"),
+          Tfloat.new("float64")]
+      }
     }
   }
-}
+end
 
-exact_sigs = {
-  "unary" => {
-    "default" => {}, "float_result" => {}
-  },
-  "binary" => {
-    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {} 
+def exact_sigs
+  {
+    "unary" => {
+      "default" => {}, "float_result" => {}
+    },
+    "binary" => {
+      "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {} 
+    }
   }
-}
+end
 
-inexact_sigs = {
-  "unary" => {
-    "default" => {}, "float_result" => {}
-  },
-  "binary" => {
-    "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
+def inexact_sigs
+  {
+    "unary" => {
+      "default" => {}, "float_result" => {}
+    },
+    "binary" => {
+      "default" => {}, "float_result" => {}, "bool_result" => {}, "bitwise" => {}
+    }
   }
-}
+end
 
 def init_unary_cast pattern, tinfo, rank
   # TODO

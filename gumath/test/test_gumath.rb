@@ -15,15 +15,13 @@ class TestCall < Minitest::Test
     x = X.new [1,2,3]
     y = X.new [1,2,3]
 
-    puts x.inspect
-
     z = Fn.multiply(x, y)
-    assert_equal [1,4,9], z
+    assert_equal z, [1,4,9]
     assert_equal XND, z.class
 
-    # z = Fn.multiply(x, y, cls: X)
-    # assert_equal [1,4,9], z
-    # assert_equal X, z.class
+    z = Fn.multiply(x, y, cls: X)
+    assert_equal z, [1,4,9]
+    assert_equal X, z.class
   end
   
   def test_sin_scalar
@@ -151,25 +149,23 @@ class TestMissingValues < Minitest::Test
 
   def test_unary
     a = [0, nil, 2]
-    ans = XND.new([a.map { |x| x.nil? ? nil : Math.sin(x) }])
+    ans = XND.new(a.map { |x| x.nil? ? nil : Math.sin(x) })
 
     x = XND.new(a, dtype: "?float64")
     y = Fn.sin(x)
 
-    assert_equal y.value, ans
+    assert_equal ans.value, y.value
   end
 
   def test_binary
-    a = [3, nil, 3]
-    b = [100, 1, nil]
-    ans = XND.new([
-      a.zip(b).map {|t0, t1| t0.nil? && t1.nil? ? nil : t0 * t1 }
-    ])
+    a = [3.0, nil, 3.0]
+    b = [100.0, 1.0, nil]
+    ans = XND.new(a.zip(b).map {|t0, t1| (t0.nil? || t1.nil?) ? nil : t0 * t1 })
     
     x = XND.new a, dtype: "?float64"
-    y = Fn.sin(x)
-
-    assert_equal y.value, ans
+    y = XND.new b, dtype: "?float64"
+    z = Fn.multiply x, y
+    assert_equal z.value, ans.value
   end
 
   def test_reduce
@@ -267,15 +263,15 @@ end
 
 class TestEqualN < Minitest::Test
   def test_nan_float
-    ["bfloat16", "float32", "float64"].each do |dtype|
+    ["float32", "float64"].each do |dtype|
       x = XND.new [0, Float::NAN, 2], dtype: dtype
 
       y = XND.new [0, Float::NAN, 2], dtype: dtype
       z = Fn.equaln x, y
+      assert_equal z, [true, true, true]
 
       y = XND.new [0,1,2], dtype: dtype
       z = Fn.equaln x, y
-
       assert_equal z, [true, false, true]
     end
   end
@@ -369,7 +365,7 @@ class TestFlexibleArrays < Minitest::Test
     
     x = XND.new lst, type: "array * array * array * float64"
     y = Fn.sin x
-    assert_equal y.value, ans
+    assert_equal y, XND.new(ans)
   end
 
   def test_add
@@ -382,7 +378,8 @@ class TestFlexibleArrays < Minitest::Test
       [10.0, 11.0, 12.0]]
     ]
 
-    b = [[[2.0],
+    b = [
+      [[2.0],
       [3.0, 4.0],
       [5.0, 6.0, 7.0]],
       [[-8.0],
@@ -390,7 +387,8 @@ class TestFlexibleArrays < Minitest::Test
       [111.1, 121.2, 25.3]]
     ]
 
-    ans = [[[1.0+2.0],
+    ans = [
+      [[1.0+2.0],
       [2.0+3.0, 3.0+4.0],
       [4.0+5.0, 5.0+6.0, 6.0+7.0]],
       [[7.0-8.0],
@@ -401,7 +399,7 @@ class TestFlexibleArrays < Minitest::Test
     x = XND.new a, type: "array * array * array * float64"
     y = XND.new b, type: "array * array * array * float64"
     z = Fn.add x, y
-    assert_equal z.value, ans
+    assert_equal z, ans
   end         
 end # class TestFlexibleArrays
 
@@ -432,6 +430,7 @@ end
 
 class TestGraphs < Minitest::Test
   def test_shortest_path
+    skip "abstract return types are currently disabled."
     graphs = [
       [[[1, 1.2],  [2, 4.4]],
        [[2, 2.2]],

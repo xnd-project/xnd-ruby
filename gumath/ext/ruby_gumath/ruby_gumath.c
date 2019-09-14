@@ -49,6 +49,8 @@ VALUE cGumath;
 /*                               Error handling                             */
 /****************************************************************************/
 
+static VALUE rb_eValueError;
+
 VALUE
 seterr(ndt_context_t *ctx)
 {
@@ -134,12 +136,13 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
   gm_kernel_t kernel;
   ndt_apply_spec_t spec = ndt_apply_spec_empty;
   int64_t li[NDT_MAX_ARGS];
-  GufuncObject *self_p;
   NdtObject *dt_p;
   int k;
   ndt_t *dtype = NULL;
   int nin = argc, nout, nargs;
   bool have_cpu_device = false;
+  GufuncObject * self_p;
+  bool check_broadcast = true, enable_threads = true;
 
   if (argc > NDT_MAX_ARGS) {
     rb_raise(rb_eArgError, "too many arguments.");
@@ -190,9 +193,138 @@ Gumath_GufuncObject_call(int argc, VALUE *argv, VALUE self)
     types[k] = stack[k].type;
     li[k] = stack[k].index;
   }
-
+  GET_GUOBJ(self, self_p);
+  
   if (have_cpu_device) {
-    
+    if (self_p->flags & GM_CUDA_MANAGED_FUNC) {
+      rb_raise(rb_eValueError,
+               "cannot run a cuda function on xnd objects with cpu memory.");
+    }
+  }
+
+  kernel = gm_select(&spec, self_p->table, self_p->name, types, li, nin, nout,
+                     nout && check_broadcast, stack, &ctx);
+
+  if (kernel.set == NULL) {
+    seterr(&ctx);
+    raise_error();
+  }
+
+  if (dtype) {
+    if (spec.nout != 1) {
+      ndt_err_format(&ctx, NDT_TypeError,
+                     "the 'dtype' argument is only supported for a single "
+                     "return value.");
+      ndt_apply_spec_clear(&spec);
+      ndt_decref(dtype);
+      seterr(&ctx);
+      raise_error();
+    }
+
+    const ndt_t *u = spec.types[spec.nin];
+    const ndt_t *v = ndt_copy_contiguous_dtype(u, dtype, 0, &ctx);
+
+    ndt_apply_spec_clear(&spec);
+    ndt_decref(dtype);
+
+    if (v == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+
+    types[nin] = v;
+    kernel = gm_select(&spec, self_p->table, self_p->name, types, li, nin, 1,
+                       1 && check_broadcast, stack, &ctx);
+    if (kernel.set == NULL) {
+      seterr(&ctx);
+      raise_error();
+    }
+  }
+
+  /*
+   * Replace args/kwargs types with types after substitution and broadcasting.
+   * This includes 'out' types, if explicitly passed as kwargs.
+   */
+  for (int i = 0; i < spec.nargs; ++i) {
+    stack[i].type = spec.types[i];
+  }
+
+  if (nout == 0) {
+    /* 'out' types have been inferred, create new XndObjects. */
+    VALUE x;
+    for (int i = 0; i < spec.nout; ++i) {
+      if (ndt_is_concrete(spec.types[nin+i])) {
+        uint32_t flags = self_p->flags == GM_CUDA_MANAGED_FUNC ? XND_CUDA_MANAGED : 0;
+        x = rb_xnd_empty_from_type(cls, spec.types[nin+i], flags);
+        rbstack[nin+i] = x;
+        stack[nin+i] = *rb_xnd_const_xnd(x);
+      }
+      else {
+        rb_raise(rb_eValueError,
+                 "args with abstract types are temporarily disabled.");
+      }
+    }
+  }
+
+  if (self_p->flags == GM_CUDA_MANAGED_FUNC) {
+#ifdef HAVE_CUDA
+    /* populate with CUDA specific stuff */
+#else
+    ndt_err_format(&ctx, NDT_RuntimeError,
+                   "internal error: GM_CUDA_MANAGED_FUNC set in a build without cuda support");
+    ndt_apply_spec_clear(&spec);
+    seterr(&ctx);
+    raise_error();
+#endif // HAVE_CUDA
+  }
+  else {
+#ifdef HAVE_PTHREAD_H
+    const int rounding = fegetround();
+    fesetround(FE_TONEAREST);
+
+    const int64_t N = enable_threads ? max_threads : 1;
+    const int ret = gm_apply_thread(&kernel, stack, spec.outer_dims, N, &ctx);
+    fesetround(rounding);
+
+    if (ret < 0) {
+      ndt_apply_spec_clear(&spec);
+      seterr(&ctx);
+      raise_error();
+    }
+#else
+    const int rounding = fegetround();
+    fesetround(FE_TONEAREST);
+
+    const int ret = gm_apply(&kernel, stack, spec.outer_dims, &ctx);
+    fesetround(rounding);
+
+    if (ret < 0) {
+      ndt_apply_spec_clear(&spec);
+      seterr(&ctx);
+      raise_error();
+    }    
+#endif // HAVE_PTHREAD_H
+  }
+
+  nin = spec.nin;
+  nout = spec.nout;
+  nargs = spec.nargs;
+  ndt_apply_spec_clear(&spec);
+
+  switch (nout) {
+  case 0: {
+    return Qnil;
+  }
+  case 1: {
+    return rbstack[nin];
+  }
+  default: {
+    VALUE arr = rb_ary_new2(nout);
+    for (int i = 0; i < nout; ++i) {
+      rb_ary_store(arr, i, rbstack[nin+i]);
+    }
+    return arr;
+  }
   }
 }
 
@@ -252,7 +384,7 @@ add_function(const gm_func_t *f, void *args)
   struct map_args *a = (struct map_args *)args;
   VALUE func, func_hash;
 
-  func = GufuncObject_alloc(a->table, f->name);
+  func = GufuncObject_alloc(a->table, f->name, GM_CPU_FUNC);
   if (func == NULL) {
     return -1;
   }
@@ -263,7 +395,6 @@ add_function(const gm_func_t *f, void *args)
   return 0;
 }
 
-/* C API call for adding functions from a gumath kernel table to  */
 int
 rb_gumath_add_functions(VALUE module, const gm_tbl_t *tbl)
 {
@@ -316,6 +447,9 @@ void Init_ruby_gumath(void)
 
   /* Instance methods */
   rb_define_method(cGumath_GufuncObject, "call", Gumath_GufuncObject_call,-1);
+
+  /* errors */
+  rb_eValueError = rb_define_class("ValueError", rb_eRuntimeError);
   
   Init_gumath_functions();
   Init_gumath_examples();

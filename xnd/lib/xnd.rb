@@ -298,7 +298,6 @@ class XND < RubyXND
     end
   end
 
-  
   def initialize data, type: nil, dtype: nil, levels: nil, typedef: nil,
       dtypedef: nil, device: nil
     if [type, dtype, levels, typedef, dtypedef].count(nil) < 2
@@ -347,9 +346,9 @@ class XND < RubyXND
   end
 
   def inspect
-    str = "#<XND:#{object_id}>\n"
+    str = "#<#{self.class}:#{object_id}>\n"
     str += "\t type= " + self.type.to_s + "\n"
-    str += "\t value= \n"
+    str += "\t value= "
     str += self.short_value(10).to_s
     str += "\n"
     
@@ -359,6 +358,4 @@ class XND < RubyXND
   def to_s
     short_value(10).to_s
   end
-
-  alias :to_a :value
 end # class XND

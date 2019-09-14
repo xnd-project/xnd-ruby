@@ -149,10 +149,8 @@ mblock_alloc(void)
   if (self == NULL) {
     
   }
-
   self->type = NULL;
   self->xnd = NULL;
-
   return self;
 }
 
@@ -938,7 +936,7 @@ static VALUE XND_size(VALUE self);
 
 /* Allocate an XndObject and return wrapped in a Ruby object. */
 static VALUE
-XndObject_alloc(void)
+XndObject_alloc(VALUE klass)
 {
   XndObject *xnd;
 
@@ -953,7 +951,7 @@ XndObject_alloc(void)
   xnd->xnd.type  = NULL;
   xnd->xnd.ptr = NULL;
 
-  return WRAP_XND(cXND, xnd);
+  return WRAP_XND(klass, xnd);
 }
 
 /* Mark Ruby objects within XndObject. */
@@ -1386,6 +1384,10 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
     return ULL2NUM(temp);
   }
 
+  case BFloat16: {
+    rb_raise(rb_eNotImpError, "bfloat16 is not implemented.");
+  }
+
   case Float16: {
     rb_raise(rb_eNotImpError, "float16 is not implemented.");
   }
@@ -1402,6 +1404,10 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
     
     rb_xnd_unpack_float64(&temp, (unsigned char*)x->ptr, le(t->flags));
     return DBL2NUM(temp);
+  }
+
+  case BComplex32: {
+    rb_raise(rb_eNotImpError, "bcomplex32 not implemented.");    
   }
 
   case Complex32: {
@@ -1480,6 +1486,34 @@ _XND_value(const xnd_t * const x, const int64_t maxshape)
     size_t size = s ? strlen(s) : 0;
 
     return bytes_from_string_and_size(s, size);
+  }
+
+  case Array: {
+    VALUE lst, v;
+    int64_t shape;
+
+    shape = XND_ARRAY_SHAPE(x->ptr);
+    if (shape > maxshape) {
+      shape = maxshape;
+    }
+
+    lst = rb_ary_new2(shape);
+
+    for (int i = 0; i < shape; ++i) {
+      if (i == maxshape-1) {
+        rb_ary_store(lst, i, xnd_ellipsis());
+        break;
+      }
+
+      const xnd_t next = xnd_array_next(x, i);
+      v = _XND_value(&next, maxshape);
+      if (v == NULL) {
+        return NULL;
+      }
+      rb_ary_stor(lst, i, v);
+    }
+
+    return lst;
   }
 
   case Categorical: {
@@ -1569,7 +1603,7 @@ RubyXND_view_move_type(XndObject *src_p, xnd_t *x)
   type = rb_ndtypes_from_type(x->type);
   ndt_decref(x->type);
   
-  view = XndObject_alloc();
+  view = XndObject_alloc(cXND);
   GET_XND(view, view_p);
 
   view_p->mblock = src_p->mblock;
@@ -2150,7 +2184,7 @@ XND_copy_contiguous(int argc, VALUE *argv, VALUE self)
     seterr(&ctx);
   }
 
-  dest = rb_xnd_empty_from_type(t, 0);
+  dest = rb_xnd_empty_from_type(cXND, t, 0);
   ndt_decref(t);
 
   GET_XND(dest, dest_p);
@@ -2275,7 +2309,7 @@ XND_s_deserialize(VALUE klass, VALUE v)
   
   memcpy(mblock_p->xnd->master.ptr, s, mblock_size);
 
-  self = XndObject_alloc();
+  self = XndObject_alloc(cXND);
   GET_XND(self, self_p);
   XND_from_mblock(self_p, mblock);
     
@@ -2298,7 +2332,7 @@ RubyXND_s_empty(VALUE klass, VALUE origin_type, VALUE device)
   VALUE mblock_type, xnd_type;
   uint32_t flags = 0;
 
-  self = XndObject_alloc();
+  self = XndObject_alloc(cXND);
   GET_XND(self, self_p);
 
   if (device != Qnil) {
@@ -2367,7 +2401,7 @@ rb_xnd_from_xnd(xnd_t *x)
   MemoryBlockObject *mblock_p;
   
   mblock = mblock_from_xnd(x);
-  xnd = XndObject_alloc();
+  xnd = XndObject_alloc(cXND);
   GET_XND(xnd, xnd_p);
   GET_MBLOCK(mblock, mblock_p);
   type = mblock_p->type;
@@ -2383,7 +2417,7 @@ rb_xnd_from_xnd(xnd_t *x)
 
 /* Create an XND object of type ndt_t */
 VALUE
-rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags)
+rb_xnd_empty_from_type(VALUE klass, const ndt_t *t, uint32_t flags)
 {
   MemoryBlockObject *mblock_p;
   XndObject *xnd_p;
@@ -2391,7 +2425,7 @@ rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags)
 
   type = rb_ndtypes_from_type(t);
   mblock = mblock_empty(type, flags);
-  xnd = XndObject_alloc();
+  xnd = XndObject_alloc(klass);
 
   GET_XND(xnd, xnd_p);
 

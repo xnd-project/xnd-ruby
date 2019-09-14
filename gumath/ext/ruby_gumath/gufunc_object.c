@@ -70,7 +70,7 @@ const rb_data_type_t GufuncObject_type = {
 };
 
 VALUE
-GufuncObject_alloc(const gm_tbl_t *table, const char *name)
+GufuncObject_alloc(const gm_tbl_t *table, const char *name, const uint32_t flags)
 {
   NDT_STATIC_CONTEXT(ctx);
   GufuncObject *guobj_p;
@@ -82,6 +82,9 @@ GufuncObject_alloc(const gm_tbl_t *table, const char *name)
   if (guobj_p->name == NULL) {
     seterr(&ctx);
   }
+
+  guobj_p->flags = flags;
+  guobj_p->identity = Qnil;
 
   return guobj;
 }

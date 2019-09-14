@@ -55,6 +55,7 @@ extern VALUE cGumath_GufuncObject;
 #define WRAP_GUOBJ(klass, guobj_p) TypedData_Wrap_Struct(klass,         \
                                                           &GufuncObject_type, guobj_p)
 
-VALUE GufuncObject_alloc(const gm_tbl_t *table, const char *name);
+VALUE GufuncObject_alloc(const gm_tbl_t *table, const char *name,
+                           const uint32_t flags);
 
 #endif

@@ -45,20 +45,21 @@ extern "C" {
 #include "xnd.h"
 #include "overflow.h"
 
+  typedef struct MemoryBlockObject MemoryBlockObject;
+  typedef struct XndObject XndObject;
+  extern VALUE cXND;
+  
   size_t rb_xnd_hash_size(VALUE hash);
   int rb_xnd_get_complex_values(VALUE comp, double *real, double *imag);
   /* Return true if obj is of type XND. */
   int rb_xnd_check_type(VALUE obj);
   const xnd_t * rb_xnd_const_xnd(VALUE xnd);
-  VALUE rb_xnd_empty_from_type(const ndt_t *t, uint32_t flags);
+  VALUE rb_xnd_empty_from_type(VALUE klass, const ndt_t *t, uint32_t flags);
   VALUE rb_xnd_from_xnd(xnd_t *x);
   XndObject * rb_xnd_get_xnd_object(VALUE obj);
   MemoryBlockObject * rb_xnd_get_mblock_object(VALUE mblock);
-  int rb_xnd_is_cuda_mananged(VALUE xnd);
-  
-  typedef struct XndObject XndObject;
-  extern VALUE cXND;
-
+  int rb_xnd_is_cuda_managed(VALUE xnd);
+ 
 #ifdef __cplusplus
 }
 #endif

@@ -42,6 +42,26 @@
 #include "ruby_gumath.h"
 #include "util.h"
 
+#ifdef _MSC_VER
+  #ifndef UNUSED
+    #define UNUSED
+  #endif
+  #include <float.h>
+  #include <fenv.h>
+  #pragma fenv_access(on)
+#else
+  #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+    #define UNUSED __attribute__((unused))
+  #else
+    #define UNUSED
+  #endif
+  #include <fenv.h>
+  #if 0 /* Not supported by gcc and clang. */
+    #pragma STDC FENV_ACCESS ON
+  #endif
+#endif
+
+
 void Init_gumath_functions(void);
 void Init_gumath_examples(void);
 

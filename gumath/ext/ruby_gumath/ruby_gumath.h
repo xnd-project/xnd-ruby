@@ -35,6 +35,9 @@
 /* Classes */
 extern VALUE cGumath;
 
+/* C API call for adding functions from a gumath kernel table to a Ruby module.
+ * Only adds CPU functions.
+ */
 int rb_gumath_add_functions(VALUE module, const gm_tbl_t *tbl);
 #define GUMATH_FUNCTION_HASH rb_intern("@gumath_functions")
 
