@@ -941,14 +941,12 @@ rb_ndtypes_from_type(const ndt_t *type)
   return self;
 }
 
-/* Return 1 if obj is of type NDTypes. 0 otherwise. */
 int
 rb_ndtypes_check_type(VALUE obj)
 {
   return NDT_CHECK_TYPE(obj);
 }
 
-/* Get a pointer to the NdtObject struct that is contained within obj. */
 NdtObject *
 rb_ndtypes_get_ndt_object(VALUE obj)
 {
@@ -960,14 +958,12 @@ rb_ndtypes_get_ndt_object(VALUE obj)
   return ndt_p;
 }
 
-/* Get an allocated Ruby object of type NDTypes. ndt_p should have been allocated already. */
 VALUE
 rb_ndtypes_make_ndt_object(NdtObject *ndt_p)
 {
   return MAKE_NDT(cNDTypes, ndt_p);
 }
 
-/* Perform allocation and get a Ruby object of type NDTypes. */
 VALUE
 rb_ndtypes_wrap_ndt_object(void)
 {
@@ -976,7 +972,6 @@ rb_ndtypes_wrap_ndt_object(void)
   return WRAP_NDT(cNDTypes, ndt_p);
 }
 
-/* Get pointer to the internal ndt_t object from the NDTypes Ruby object ndt. */
 const ndt_t *
 rb_ndtypes_const_ndt(VALUE ndt)
 {
@@ -991,11 +986,6 @@ rb_ndtypes_const_ndt(VALUE ndt)
   return ndt_p->ndt;
 }
 
-/* Function for taking a source type and moving it accross the subtree.
-
-   @param src NDTypes Ruby object of the source XND object.
-   @param t Pointer to type of the view of XND object.
-*/
 VALUE
 rb_ndtypes_move_subtree(VALUE src, ndt_t *t)
 {
@@ -1018,11 +1008,6 @@ rb_ndtypes_move_subtree(VALUE src, ndt_t *t)
   return dest;
 }
 
-/* Create NDT object from String. Returns the same object if type is NDT. 
-   
-   @param type String object containing description of type.
-   @return New NDT object.
-*/
 VALUE
 rb_ndtypes_from_object(VALUE type)
 {
